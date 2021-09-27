@@ -5,8 +5,6 @@ from qutip import *
 import math
 import time
 
-from scipy.linalg.matfuncs import tanhm
-
 #%%
 
 def drive_freq_fun(t,args):
@@ -17,7 +15,7 @@ def drive_freq_fun_conj(t,args):
     return 0.2*math.tanh(t)
     #return 0.2
 
-def qubit_integrate(Nq,Nr,w_r,w_a,g_coup,psi0,tlist):
+def Master_equation(Nq,Nr,w_r,w_a,g_coup,psi0,tlist):
     
     # define the operators
     a = tensor(destroy(Nr),qeye(Nq)) # resonator
@@ -69,8 +67,8 @@ psi1 = tensor(basis(Nr,0),basis(Nq,1))
 tlist = np.linspace(0,20,1000)
 
 # %%
-out0 = qubit_integrate(Nq,Nr,w_r,w_a,g_coup,psi0,tlist)
-out1 = qubit_integrate(Nq,Nr,w_r,w_a,g_coup,psi1,tlist)
+out0 = Master_equation(Nq,Nr,w_r,w_a,g_coup,psi0,tlist)
+out1 = Master_equation(Nq,Nr,w_r,w_a,g_coup,psi1,tlist)
 # %%
 # Trace over qubit
 state0 = out0.states

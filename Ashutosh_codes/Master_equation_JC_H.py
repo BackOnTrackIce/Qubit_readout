@@ -14,7 +14,7 @@ def drive_freq_fun_conj(t,args):
     return 0.2*math.tanh(t)*np.exp(1j*w_d*t)
     
 
-def qubit_integrate(Nq,Nr,w_r,w_a,g_coup,psi0,tlist):
+def Master_Equation(Nq,Nr,w_r,w_a,g_coup,psi0,tlist):
     
     # define the operators
     a = tensor(destroy(Nr),qeye(Nq)) # resonator
@@ -60,8 +60,8 @@ tmax = 20
 tlist = np.linspace(0,tmax,1000)
 
 # %%
-out0 = qubit_integrate(Nq,Nr,w_r,w_a,g_coup,psi0,tlist)
-out1 = qubit_integrate(Nq,Nr,w_r,w_a,g_coup,psi1,tlist)
+out0 = Master_Equation(Nq,Nr,w_r,w_a,g_coup,psi0,tlist)
+out1 = Master_Equation(Nq,Nr,w_r,w_a,g_coup,psi1,tlist)
 # %%
 # Trace over qubit
 state0 = out0.states
