@@ -7,10 +7,10 @@ import time
 
 #%%
 
-def drive_freq_fun(t,args):
+def drive_JC(t,args):
     return 0.2*math.tanh(t)*np.exp(-1j*w_d*t)
 
-def drive_freq_fun_conj(t,args):
+def drive_JC_conj(t,args):
     return 0.2*math.tanh(t)*np.exp(1j*w_d*t)
     
 
@@ -27,7 +27,7 @@ def Master_Equation(Nq,Nr,w_r,w_a,g_coup,psi0,tlist):
     H0 = h_cross * w_r * a.dag() * a  + h_cross * w_a * sz/2  + h_cross * g_coup *(a.dag() * sm + a * sp) # JC hamiltonian 
     H1 = h_cross * a.dag()
     H2 = h_cross * a
-    H  = [H0,[H1,drive_freq_fun],[H2,drive_freq_fun_conj]]
+    H  = [H0,[H1,drive_JC],[H2,drive_JC_conj]]
 
     c_ops = [kappa * a]
     #c_ops = []

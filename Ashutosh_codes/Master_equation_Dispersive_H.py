@@ -25,20 +25,15 @@ def Master_equation(Nq,Nr,w_r,w_a,g_coup,psi0,tlist):
 
 
     # Define the time dependent hamiltonian
-    #H0 = h_cross * w_r * a.dag() * a  + h_cross * w_a * sz/2  + h_cross * g_coup *(a.dag() * sp + a * sm) # JC hamiltonian
+    
     H0 = h_cross * (w_r - w_d) * a.dag() * a  + h_cross * (w_a + chi) * sz/2  + h_cross * chi * a.dag() * a * sz 
     H1 = h_cross * a.dag()
     H2 = h_cross * a
     H  = [H0,[H1,drive_freq_fun],[H2,drive_freq_fun_conj]]
-    
-    # Define the collapse operators
-    #c_ops = [(g * a/2),(kappa * b/2)]
-    
-    # define the list of operators whose expectation values are needed 
-    #e_ops = [n_a,n_b]
+   
 
     c_ops = [kappa * a]
-    #c_ops = []
+
     e_ops = []
 
     # using mesolver 
@@ -61,8 +56,6 @@ chi = 0.05 * 2 * np.pi #g_coup**2/(w_a - w_r)
 #define the initial state of the system
 psi0 = tensor(basis(Nr,0),basis(Nq,0))
 psi1 = tensor(basis(Nr,0),basis(Nq,1))
-#print(psi0)
-#psi0 = tensor(basis(Nr,0),(basis(Nq,0) + basis(Nq,1))/math.sqrt(2) )
 
 tlist = np.linspace(0,20,1000)
 
