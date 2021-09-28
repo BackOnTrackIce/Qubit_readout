@@ -7,14 +7,14 @@ import time
 
 # %%
 def drive_lab_frame(t,args):
-    return Drive_strength * math.tanh(t) * np.exp(-1j*w_d*t)
+    return 0.5 * Drive_strength * (math.tanh((t - mu1)/sigma) + 1) * np.exp(-1j*w_d*t)
 
 def drive_lab_frame_conj(t,args):
-    return Drive_strength * math.tanh(t) * np.exp(1j*w_d*t)
+    return 0.5 * Drive_strength * (math.tanh((t - mu1)/sigma) + 1) * np.exp(1j*w_d*t)
 
 
 def drive_drive_frame(t,args):
-    return Drive_strength * math.tanh(t)
+    return 0.5 * Drive_strength * (math.tanh((t - mu1)/sigma) + 1)
 
 
 
@@ -28,8 +28,11 @@ def Master_Equation(H0,Nq,Nr,psi0,tlist,flag):
     H2 = h_cross * a
     if flag == "Lab":
         H  = [H0,[H1,drive_lab_frame],[H2,drive_lab_frame_conj]]
-    else:
+    elif flag == "Drive":
         H = [H0,[H1,drive_drive_frame],[H2,drive_drive_frame]]
+    else:
+        print("Flag has to be either Lab or Drive")
+        return 0
 
     c_ops = [kappa * a]
     #c_ops = []
@@ -48,7 +51,7 @@ def frame_of_drive(output1, output2, tlist):
     a = tensor(destroy(Nr),qeye(Nq)) # resonator
     sz = tensor(qeye(Nr),sigmaz()) # qubit
 
-    U_exp = [1j * t * w_d * (a.dag() * a + sz ) for t in tlist]
+    U_exp = [1j * t * w_d * (a.dag() * a + sz/2 ) for t in tlist]
     
     U_matrix = [i.expm() for i in U_exp]
 
@@ -75,25 +78,39 @@ def phase_plot_quantities(alpha_g, alpha_e):
     return Q_g, I_g, Q_e, I_e
 
 # %%
+# Writing all the frequencies in units of 1GHz
+# All time steps would be in units of 1ns
+
 h_cross = 1
-w_r = 5 # frequency of resonator
-w_a = 6 # frequency of qubit
-g_coup = 0.1 # coupling between resonator and qubit
-kappa = 0.6
+w_r = 2 * np.pi * 4 # frequency of resonator
+w_a = 2 * np.pi * 6 # frequency of qubit
+g_coup = 2 * np.pi * 0.05 # coupling between resonator and qubit
+kappa = 2 * np.pi * 0.0025
+gamma1 = 2 * np.pi * 0.1 * 1e-3 
+gamma_phi = 2 * np.pi * 0.3 *1e-3
+Drive_strength = 2 * np.pi * 0.01
+w_d = 2 * np.pi * 4  # drive frequency
+mu1 = 10 * 1e3/(2 * np.pi)
+sigma = 10 * 1e3/(2 * np.pi)
+
+chi = g_coup**2/(w_a - w_r)
+
+n_crit = 400
+
 Nr = 5  # No. of levels of resonator
 Nq = 2   # No. of levels of qubit
-w_d = 5  # drive frequency
-chi = g_coup**2/(w_a - w_r)
-Drive_strength = 0.5
+
+
 
 a = tensor(destroy(Nr),qeye(Nq)) # resonator
 sz = tensor(qeye(Nr),sigmaz()) # qubit
 sm = tensor(qeye(Nr),sigmap())
 sp = tensor(qeye(Nr),sigmam())
+I = tensor(qeye(Nr),qeye(Nq))
 
 H0_JC = h_cross * w_r * a.dag() * a  + h_cross * w_a * sz/2  + h_cross * g_coup *(a.dag() * sm + a * sp)
 
-H0_Disp = h_cross * (w_r - w_d) * a.dag() * a  + h_cross * (w_a + chi) * sz/2  + h_cross * chi * a.dag() * a * sz 
+H0_Disp = h_cross * (w_r) * a.dag() * a  + h_cross * (w_a + 2*chi*(a.dag() * a + I/2)) * sz/2 
 
 #define the initial state of the system
 psi0 = tensor(basis(Nr,0),basis(Nq,0))
@@ -101,15 +118,15 @@ psi1 = tensor(basis(Nr,0),basis(Nq,1))
 #print(psi0)
 #psi0 = tensor(basis(Nr,0),(basis(Nq,0) + basis(Nq,1))/math.sqrt(2) )
 
-tmax = 20
+tmax = 40
 tlist = np.linspace(0,tmax,1000)
 
 # %%
 out0_JC = Master_Equation(H0_JC,Nq,Nr,psi0,tlist,"Lab")
 out1_JC = Master_Equation(H0_JC,Nq,Nr,psi1,tlist,"Lab")
 # %%
-out0_Disp = Master_Equation(H0_Disp,Nq,Nr,psi0,tlist,"Drive")
-out1_Disp = Master_Equation(H0_Disp,Nq,Nr,psi1,tlist,"Drive")
+out0_Disp = Master_Equation(H0_Disp,Nq,Nr,psi0,tlist,"Lab")
+out1_Disp = Master_Equation(H0_Disp,Nq,Nr,psi1,tlist,"Lab")
 
 #%%
 
@@ -120,9 +137,9 @@ State0_Res_JC, State1_Res_JC = partial_trace_over_qubit(state0_JC, state1_JC)
 Q_g_JC, I_g_JC, Q_e_JC, I_e_JC = phase_plot_quantities(State0_Res_JC, State1_Res_JC)
 
 #%%
-#state0_Disp, state1_Disp = frame_of_drive(out0_Disp,out1_Disp,tlist)
-state0_Disp = out0_Disp.states
-state1_Disp = out1_Disp.states
+state0_Disp, state1_Disp = frame_of_drive(out0_Disp,out1_Disp,tlist)
+#state0_Disp = out0_Disp.states
+#state1_Disp = out1_Disp.states
 
 State0_Res_Disp, State1_Res_Disp = partial_trace_over_qubit(state0_Disp, state1_Disp)
 
@@ -138,6 +155,5 @@ plt.plot(Q_g_Disp, I_g_Disp, label = "Dispersive")
 plt.plot(Q_e_Disp, I_e_Disp, label = "Dispersive")
 
 plt.legend()
-# %%
 
 # %%
