@@ -97,7 +97,7 @@ chi = g_coup**2/(w_a - w_r)
 
 n_crit = 400
 
-Nr = 5  # No. of levels of resonator
+Nr = 10  # No. of levels of resonator
 Nq = 2   # No. of levels of qubit
 
 
@@ -118,8 +118,9 @@ psi1 = tensor(basis(Nr,0),basis(Nq,1))
 #print(psi0)
 #psi0 = tensor(basis(Nr,0),(basis(Nq,0) + basis(Nq,1))/math.sqrt(2) )
 
-tmax = 40
-tlist = np.linspace(0,tmax,1000)
+tmax = 15 * 100
+Npoints = 10000
+tlist = np.linspace(0,tmax,Npoints)
 
 # %%
 out0_JC = Master_Equation(H0_JC,Nq,Nr,psi0,tlist,"Lab")
@@ -155,5 +156,21 @@ plt.plot(Q_g_Disp, I_g_Disp, label = "Dispersive")
 plt.plot(Q_e_Disp, I_e_Disp, label = "Dispersive")
 
 plt.legend()
+
+# %%
+
+# Calculate trace distance between the JC and Dispersive states
+
+trace_distance0_time = [tracedist(state0_JC[i],state0_Disp[i]) for i in range(len(tlist))]
+
+trace_distance1_time = [tracedist(state1_JC[i],state1_Disp[i]) for i in range(len(tlist))]
+
+# %%
+
+plt.plot(tlist,trace_distance0_time, label="Qubit in ground state")
+#plt.plot(tlist,trace_distance1_time, label="Qubit in excited state")
+plt.legend()
+plt.xlabel("Time in ns")
+# %%
 
 # %%
