@@ -32,6 +32,9 @@ from c3.optimizers.optimalcontrol import OptimalControl
 #%matplotlib widget
 
 import plotly.graph_objects as go
+from plotting import *
+from utilities_functions import *
+
 # %%
 qubit_levels = 3
 qubit_frequency = 4e9
@@ -52,7 +55,7 @@ qubit = chip.Qubit(
 )
 
 # %%
-resonator_levels = 3
+resonator_levels = 10
 resonator_frequency = 5e9
 resonator_t1 = 27e-6
 resonator_t2star = 39e-6
@@ -130,37 +133,116 @@ sim_res = 100e9
 awg_res = 2e9
 v2hz = 1e9
 
-chain = ["LO", "AWG", "DigitalToAnalog", "Response", "Mixer", "VoltsToHertz"]
-chains = {f"{d.name}": chain for d in drives}
-
-generator = Gnr(
-    devices={
-        "LO": devices.LO(name="lo", resolution=sim_res, outputs=1),
-        "AWG": devices.AWG(name="awg", resolution=awg_res, outputs=1),
-        "DigitalToAnalog": devices.DigitalToAnalog(
-            name="dac", resolution=sim_res, inputs=1, outputs=1
-        ),
-        "Response": devices.Response(
-            name="resp",
-            rise_time=Qty(value=0.3e-9, min_val=0.05e-9, max_val=0.6e-9, unit="s"),
-            resolution=sim_res,
-            inputs=1,
-            outputs=1,
-        ),
-        "Mixer": devices.Mixer(name="mixer", inputs=2, outputs=1),
-        "VoltsToHertz": devices.VoltsToHertz(
-            name="V_to_Hz",
-            V_to_Hz=Qty(value=1e9, min_val=0.9e9, max_val=1.1e9, unit="Hz/V"),
-            inputs=1,
-            outputs=1,
-        ),
-    },
-    chains=chains,
-)
+generator = createGenerator(drives) 
 generator.devices["AWG"].enable_drag_2()
 
 # %%
+plotComplexMatrix(qr_coupling.get_Hamiltonian())
+plotComplexMatrix(resonator.get_Hamiltonian())
+plotComplexMatrix(qubit.get_Hamiltonian())
+plotComplexMatrix(model.get_Hamiltonian())
+# %%
 
-qr_coupling.get_Hamiltonian()
+# Defining single qubit X gates on the qubit
+
+t_final = 15e-9
+sideband = 50e6
+gauss_params = {
+    "amp": Qty(value=0.5,min_val=0.2,max_val=0.6,unit="V"),
+    "t_final": Qty(value=t_final,min_val=0.5 * t_final,max_val=1.5 * t_final,unit="s"),
+    "sigma": Qty(value=t_final / 4,min_val=t_final / 8,max_val=t_final / 2,unit="s"),
+    "xy_angle": Qty(value=0.0,min_val=-0.5 * np.pi,max_val=2.5 * np.pi,unit="rad"),
+    "freq_offset": Qty(value=-sideband - 3e6,min_val=-56 * 1e6,max_val=-52 * 1e6,unit="Hz 2pi"),
+    "delta": Qty(value=-1,min_val=-5,max_val=3,unit="")
+}
+
+gauss_pulse = pulse.Envelope(
+    name="gauss",
+    desc="Gaussian comp for single qubit gates",
+    params=gauss_params,
+    shape=envelopes.gaussian_nonorm
+)
+
+nodrive_pulse = pulse.Envelope(
+    name="no_drive",
+    params={
+        "t_final": Qty(
+            value=t_final,
+            min_val=0.5 * t_final,
+            max_val=1.5 * t_final,
+            unit="s"
+        )
+    },
+    shape=envelopes.no_drive
+)
+
+## Create carriers
+qubit_freqs = model.get_qubit_freqs()
+carriers = createCarriers(qubit_freqs, sideband)
+# %%
+
+qubit_pulse = copy.deepcopy(gauss_pulse)
+resonator_pulse = copy.deepcopy(nodrive_pulse)
+X_gate = gates.Instruction(
+    name="x", targets=[0], t_start=0.0, t_end=t_final, channels=["dQ", "dR"]
+)
+X_gate.add_component(qubit_pulse, "dQ")
+X_gate.add_component(copy.deepcopy(carriers[0]), "dQ")
+X_gate.add_component(resonator_pulse, "dR")
+X_gate.add_component(copy.deepcopy(carriers[1]), "dR")
+
+single_q_gates = [X_gate]
+# %%
+
+parameter_map = PMap(instructions=single_q_gates, model=model, generator=generator)
+exp = Exp(pmap=parameter_map)
+exp.set_opt_gates(['x[0]'])
+unitaries = exp.compute_propagators()
+plotComplexMatrix(unitaries['x[0]'].numpy())
+# %%
+
+psi_init = [[0] * model.tot_dim]
+psi_init[0][0] = 1
+init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
+sequence = ['x[0]']
+plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=True)
+# %%
+
+# Optimisation of the pulse
+
+parameter_map.set_opt_map([
+    [("x[0]", "dQ", "gauss", "amp")],
+    [("x[0]", "dQ", "gauss", "freq_offset")],
+    [("x[0]", "dQ", "gauss", "xy_angle")],
+    [("x[0]", "dQ", "gauss", "delta")],
+    [("x[0]", "dR", "carrier", "framechange")]
+])
+
+parameter_map.print_parameters()
+
+opt = OptimalControl(
+    dir_path="./output/",
+    fid_func=fidelities.average_infid_set,
+    fid_subspace=["Q", "R"],
+    pmap=parameter_map,
+    algorithm=algorithms.lbfgs,
+    options={"maxfun": 150},
+    run_name="better_x"
+)
+exp.set_opt_gates(["x[0]"])
+opt.set_exp(exp)
 
 # %%
+
+# Run the optimisation
+opt.optimize_controls()
+opt.current_best_goal
+# %%
+plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=True)
+# %%
+
+# Implement readout of resonator
+# readout pulse on resonator
+
+
+
