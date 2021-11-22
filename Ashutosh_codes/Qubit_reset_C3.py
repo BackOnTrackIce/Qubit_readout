@@ -244,5 +244,87 @@ plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=True)
 # Implement readout of resonator
 # readout pulse on resonator
 
+def calculateState(
+    exp: Experiment,
+    psi_init: tf.Tensor,
+    sequence: List[str]     
+):
+
+    """
+    Calculates the state of system with time.
+
+    Parameters
+    ----------
+    exp: Experiment,
+        The experiment containing the model and propagators
+    psi_init: tf.Tensor,
+        Initial state vector
+    sequence: List[str]
+        List of gate names that will be applied to the state
+
+    Returns
+    -------
+    psi_list: List[tf.Tensor]
+        List of states
+    """
+
+    model = exp.pmap.model
+    dUs = exp.partial_propagators
+    psi_t = psi_init.numpy()
+    psi_list = [psi_t]
+    for gate in sequence:
+        for du in dUs[gate]:
+            psi_list.append(np.matmul(du, psi_t))
+    
+    return np.array(psi_list)
 
 
+psi_list = calculateState(exp, init_state, sequence)
+
+
+#%%
+def plotIQ(
+        exp: Experiment,
+        psi_init: tf.Tensor, 
+        sequence: List[str], 
+        annihilation_operator: tf.Tensor
+):
+    
+    """
+    Calculate and plot the I-Q values for resonator 
+
+    Parameters
+    ----------
+    exp: Experiment,
+
+    psi_init: tf.Tensor,
+ 
+    sequence: List[str], 
+
+    annihilation_operator: tf.Tensor
+
+
+    Returns
+    -------
+        
+    """
+
+    dt = exp.ts[1] - exp.ts[0]
+    psi_list = calculateState(exp, psi_init, sequence)
+    ts = np.linspace(0.0, dt * psi_list.shape[0], psi_list.shape[0])
+    
+    rho_list = np.array([tf_utils.tf_state_to_dm(i) for i in psi_list])
+    expect_val = np.array([tf_utils.tf_measure_operator(annihilation_operator, i) for i in rho_list])
+    Q = np.real(expect_val)
+    I = np.imag(expect_val)
+    
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x = Q, y = I, mode = "lines"))
+    fig.show()
+
+plotIQ(exp, init_state, sequence, model.ann_opers[1])
+
+
+
+
+# %%
