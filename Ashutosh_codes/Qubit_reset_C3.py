@@ -137,6 +137,8 @@ generator = createGenerator(drives)
 generator.devices["AWG"].enable_drag_2()
 
 # %%
+# Checking if the Hamiltonian looks correct
+
 plotComplexMatrix(qr_coupling.get_Hamiltonian())
 plotComplexMatrix(resonator.get_Hamiltonian())
 plotComplexMatrix(qubit.get_Hamiltonian())
@@ -145,12 +147,12 @@ plotComplexMatrix(model.get_Hamiltonian())
 
 # Defining single qubit X gates on the qubit
 
-t_final = 15e-9
+t_X_gate = 15e-9
 sideband = 50e6
 gauss_params = {
     "amp": Qty(value=0.5,min_val=0.2,max_val=0.6,unit="V"),
-    "t_final": Qty(value=t_final,min_val=0.5 * t_final,max_val=1.5 * t_final,unit="s"),
-    "sigma": Qty(value=t_final / 4,min_val=t_final / 8,max_val=t_final / 2,unit="s"),
+    "t_final": Qty(value=t_X_gate,min_val=0.5 * t_X_gate,max_val=1.5 * t_X_gate,unit="s"),
+    "sigma": Qty(value=t_X_gate / 4,min_val=t_X_gate / 8,max_val=t_X_gate / 2,unit="s"),
     "xy_angle": Qty(value=0.0,min_val=-0.5 * np.pi,max_val=2.5 * np.pi,unit="rad"),
     "freq_offset": Qty(value=-sideband - 3e6,min_val=-56 * 1e6,max_val=-52 * 1e6,unit="Hz 2pi"),
     "delta": Qty(value=-1,min_val=-5,max_val=3,unit="")
@@ -167,9 +169,9 @@ nodrive_pulse = pulse.Envelope(
     name="no_drive",
     params={
         "t_final": Qty(
-            value=t_final,
-            min_val=0.5 * t_final,
-            max_val=1.5 * t_final,
+            value=t_X_gate,
+            min_val=0.5 * t_X_gate,
+            max_val=1.5 * t_X_gate,
             unit="s"
         )
     },
@@ -184,7 +186,7 @@ carriers = createCarriers(qubit_freqs, sideband)
 qubit_pulse = copy.deepcopy(gauss_pulse)
 resonator_pulse = copy.deepcopy(nodrive_pulse)
 X_gate = gates.Instruction(
-    name="x", targets=[0], t_start=0.0, t_end=t_final, channels=["dQ", "dR"]
+    name="x", targets=[0], t_start=0.0, t_end=t_X_gate, channels=["dQ", "dR"]
 )
 X_gate.add_component(qubit_pulse, "dQ")
 X_gate.add_component(copy.deepcopy(carriers[0]), "dQ")
@@ -284,8 +286,7 @@ psi_list = calculateState(exp, init_state, sequence)
 
 #%%
 def plotIQ(
-        exp: Experiment,
-        psi_init: tf.Tensor, 
+        exp: Experiment, 
         sequence: List[str], 
         annihilation_operator: tf.Tensor
 ):
@@ -296,8 +297,6 @@ def plotIQ(
     Parameters
     ----------
     exp: Experiment,
-
-    psi_init: tf.Tensor,
  
     sequence: List[str], 
 
@@ -309,22 +308,87 @@ def plotIQ(
         
     """
 
-    dt = exp.ts[1] - exp.ts[0]
-    psi_list = calculateState(exp, psi_init, sequence)
-    ts = np.linspace(0.0, dt * psi_list.shape[0], psi_list.shape[0])
+    annihilation_operator = tf.convert_to_tensor(annihilation_operator, dtype=tf.complex128)
     
-    rho_list = np.array([tf_utils.tf_state_to_dm(i) for i in psi_list])
-    expect_val = np.array([tf_utils.tf_measure_operator(annihilation_operator, i) for i in rho_list])
-    Q = np.real(expect_val)
-    I = np.imag(expect_val)
+    state_index = exp.pmap.model.get_state_index((0,0))
+    psi_init_0 = [[0] * model.tot_dim]
+    psi_init_0[0][state_index] = 1
+    init_state_0 = tf.transpose(tf.constant(psi_init_0, tf.complex128))
     
+    psi_list_0 = calculateState(exp, init_state_0, sequence)
+    rho_list_0 = np.array([tf_utils.tf_state_to_dm(i) for i in psi_list_0])
+    expect_val_0 = np.array([tf_utils.tf_measure_operator(annihilation_operator, i) for i in rho_list_0])
+    Q0 = np.real(expect_val_0)
+    I0 = np.imag(expect_val_0)
+    
+
+    state_index = exp.pmap.model.get_state_index((1,0))
+    psi_init_1 = [[0] * model.tot_dim]
+    psi_init_1[0][state_index] = 1
+    init_state_1 = tf.transpose(tf.constant(psi_init_1, tf.complex128))
+    
+    psi_list_1 = calculateState(exp, init_state_1, sequence)
+    rho_list_1 = np.array([tf_utils.tf_state_to_dm(i) for i in psi_list_1])
+    expect_val_1 = np.array([tf_utils.tf_measure_operator(annihilation_operator, i) for i in rho_list_1])
+    Q1 = np.real(expect_val_1)
+    I1 = np.imag(expect_val_1)
+
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x = Q, y = I, mode = "lines"))
+    fig.add_trace(go.Scatter(x = Q0, y = I0, mode = "lines", name="Ground state"))
+    fig.add_trace(go.Scatter(x = Q1, y = I1, mode = "lines", name ="Excited state"))
     fig.show()
 
-plotIQ(exp, init_state, sequence, model.ann_opers[1])
+# %%
+
+# Define a readout pulse on resonator
+
+t_readout = 100e-9
+sideband = 50e6
+readout_params = {
+    "amp": Qty(value=0.5,min_val=0.2,max_val=0.6,unit="V"),
+    "t_final": Qty(value=t_readout,min_val=0.5 * t_readout,max_val=1.5 * t_readout,unit="s"),
+    "sigma": Qty(value=t_readout / 4,min_val=t_readout / 8,max_val=t_readout / 2,unit="s"),
+    "xy_angle": Qty(value=0.0,min_val=-0.5 * np.pi,max_val=2.5 * np.pi,unit="rad"),
+    "freq_offset": Qty(value=-sideband - 3e6,min_val=-56 * 1e6,max_val=-52 * 1e6,unit="Hz 2pi"),
+    "delta": Qty(value=-1,min_val=-5,max_val=3,unit="")
+}
+
+readout_pulse = pulse.Envelope(
+    name="readout",
+    desc="Gaussian pulse for readout",
+    params=readout_params,
+    shape=envelopes.gaussian_nonorm
+)
+
+qubit_pulse = copy.deepcopy(nodrive_pulse)
+resonator_pulse = copy.deepcopy(readout_pulse)
+Readout_gate = gates.Instruction(
+    name="Readout", targets=[1], t_start=0.0, t_end=t_readout, channels=["dQ", "dR"]
+)
+Readout_gate.add_component(qubit_pulse, "dQ")
+Readout_gate.add_component(copy.deepcopy(carriers[0]), "dQ")
+Readout_gate.add_component(resonator_pulse, "dR")
+Readout_gate.add_component(copy.deepcopy(carriers[1]), "dR")
+
+readout_gates = [Readout_gate]
 
 
-
+parameter_map = PMap(instructions=readout_gates, model=model, generator=generator)
+exp = Exp(pmap=parameter_map)
+exp.set_opt_gates(['Readout[1]'])
+unitaries = exp.compute_propagators()
 
 # %%
+
+psi_init = [[0] * model.tot_dim]
+psi_init[0][0] = 1
+init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
+sequence = ['Readout[1]']
+plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=True)
+
+# %%
+
+plotIQ(exp, sequence, model.ann_opers[1])
+# %%
+
+
