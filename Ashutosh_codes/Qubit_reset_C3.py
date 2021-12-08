@@ -1,5 +1,6 @@
 #%%
 import os
+from re import I
 import tempfile
 import numpy as np
 import copy
@@ -139,10 +140,10 @@ generator.devices["AWG"].enable_drag_2()
 # %%
 # Checking if the Hamiltonian looks correct
 
-plotComplexMatrix(qr_coupling.get_Hamiltonian())
-plotComplexMatrix(resonator.get_Hamiltonian())
-plotComplexMatrix(qubit.get_Hamiltonian())
-plotComplexMatrix(model.get_Hamiltonian())
+#plotComplexMatrix(qr_coupling.get_Hamiltonian())
+#plotComplexMatrix(resonator.get_Hamiltonian())
+#plotComplexMatrix(qubit.get_Hamiltonian())
+#plotComplexMatrix(model.get_Hamiltonian())
 # %%
 
 # Defining single qubit X gates on the qubit
@@ -270,7 +271,6 @@ def calculateState(
         List of states
     """
 
-    model = exp.pmap.model
     dUs = exp.partial_propagators
     psi_t = psi_init.numpy()
     psi_list = [psi_t]
@@ -281,7 +281,25 @@ def calculateState(
     return np.array(psi_list)
 
 
-psi_list = calculateState(exp, init_state, sequence)
+def plotNumberOperator(
+    exp: Experiment, 
+    init_state: tf.Tensor,
+    sequence: List[str], 
+    annihilation_operator: tf.Tensor
+):
+    a_op = tf.convert_to_tensor(annihilation_operator, dtype=tf.complex128)
+    a_op_dag = tf.transpose(a_op, conjugate=True)
+    N_op = tf.matmul(a_op_dag,a_op)
+    psi_list = calculateState(exp, init_state, sequence)
+    rho_list = np.array([tf_utils.tf_state_to_dm(i) for i in psi_list])
+    expect_val = np.array([tf_utils.tf_measure_operator(N_op, i) for i in rho_list])
+
+    dt = exp.ts[1] - exp.ts[0]
+    ts = np.linspace(0.0, dt * psi_list.shape[0], psi_list.shape[0])
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x = ts, y = np.real(expect_val), mode = "lines", name=r'$\langle a^\dag a \rangle$'))
+    fig.show()
 
 
 #%%
@@ -339,7 +357,6 @@ def plotIQ(
     fig.show()
 
 # %%
-
 # Define a readout pulse on resonator
 
 t_readout = 100e-9
@@ -379,7 +396,6 @@ exp.set_opt_gates(['Readout[1]'])
 unitaries = exp.compute_propagators()
 
 # %%
-
 psi_init = [[0] * model.tot_dim]
 psi_init[0][0] = 1
 init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
@@ -387,8 +403,11 @@ sequence = ['Readout[1]']
 plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=True)
 
 # %%
+plotNumberOperator(exp, init_state, sequence, model.ann_opers[1])
 
+#%%
 plotIQ(exp, sequence, model.ann_opers[1])
+
 # %%
 
 
