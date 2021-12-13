@@ -41,6 +41,7 @@ def plotSignalSpectrum(
     signal: np.array,
     spectrum_threshold: float = 1e-4,
     filename: str = None,
+    usePlotly=False
 ):
     """
     Plots the normalised frequency spectrum of a time-dependent signal.
@@ -78,11 +79,19 @@ def plotSignalSpectrum(
         normalised = normalised[limits[0] : limits[-1]]
 
     # plot frequency domain
-    plt.plot(freq, normalised.real, label="Re")
-    plt.plot(freq, normalised.imag, label="Im")
-    plt.plot(freq, np.abs(normalised) ** 2, label="Square")
-    plt.xlabel("frequency")
-    plt.legend()
+    if usePlotly:
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=freq, y=normalised.real, name="Re", mode="lines"))
+        fig.add_trace(go.Scatter(x=freq, y=normalised.imag, name="Im", mode="lines"))
+        fig.add_trace(go.Scatter(x=freq, y=np.abs(normalised)**2, name="Square", mode="lines"))
+        fig.show()
+
+    else:
+        plt.plot(freq, normalised.real, label="Re")
+        plt.plot(freq, normalised.imag, label="Im")
+        plt.plot(freq, np.abs(normalised) ** 2, label="Square")
+        plt.xlabel("frequency")
+        plt.legend()
 
     # show and save
     plt.tight_layout()

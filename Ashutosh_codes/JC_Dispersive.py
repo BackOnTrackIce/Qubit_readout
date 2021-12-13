@@ -191,6 +191,41 @@ class readout_setup:
     def calculate_trace_distance(self,state1, state2):
         trace_distance = [tracedist(state1[i],state2[i]) for i in range(len(self.tlist))]
         return trace_distance
+    
+    def plotStatePopulation(self):
+        H0 = self.JC_hamiltonian()
+        
+        H1 = self.a.dag()
+        H2 = self.a
+
+        H_total = [H0,[H1,self.drive_lab_frame], [H2, self.drive_lab_frame_conj]]
+        e_ops = []
+
+        self.psi0 = tensor(basis(self.Nr,self.cavity_photon_number),basis(self.Nq,0))
+
+        self.output = sesolve(H_total, self.psi0, self.tlist, e_ops, progress_bar=True, options= Options(nsteps=3000))
+        states = self.output.states
+        pop = []
+        N = len(np.array(states[0]))
+        for i in range(len(self.tlist)):
+            for j in range(N):
+                try:
+                    pop[i].append(np.abs(states[i][j])[0,0]**2)
+                except:
+                    pop.append([])
+                    pop[i].append(np.abs(states[i][j])[0,0]**2)
+        
+        plt.figure(dpi=100)
+        plt.plot(tlist, pop)
+        plt.show()
+        plt.close()
+
+        dynamics_res, dynamics_qubit = self.calc_dynamics(self.output, self.a, self.sz)
+        plt.plot(tlist, dynamics_res, label="Resonator")
+        plt.plot(tlist, dynamics_qubit, label="Resonator")
+        plt.legend()
+
+
 
 
     def run_simulation(self):
@@ -274,6 +309,8 @@ class readout_setup:
 
         else:
             print("runs_flag has to be Superposed or Seperate")
+
+        
         
 
 
@@ -298,7 +335,7 @@ Test1 = system_setup(
 )
 
 Test1_readout = readout_setup(
-                Nr = 10,
+                Nr = 20,
                 Nq = 2,
                 cavity_photon_number = 0,
                 tlist = tlist,
@@ -310,6 +347,9 @@ Test1_readout = readout_setup(
                 runs_flag = "Seperate"                
 )
 # %%
+Test1_readout.plotStatePopulation()
+
+#%%
 Test1_readout.run_simulation()
 
 # %%
