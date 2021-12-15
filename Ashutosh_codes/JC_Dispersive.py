@@ -310,6 +310,50 @@ class readout_setup:
         else:
             print("runs_flag has to be Superposed or Seperate")
 
+
+    def IQWithoutFrameRotation(self):
+        self.psi0 = self.psi_up
+        output1_u = self.solve_master_equation(self.H_flag1, self.SW_flag1)
+        output2_u = self.solve_master_equation(self.H_flag2, self.SW_flag2)
+
+        self.psi0 = self.psi_down
+        output1_d = self.solve_master_equation(self.H_flag1, self.SW_flag1)
+        output2_d = self.solve_master_equation(self.H_flag2, self.SW_flag2)
+        
+        self.plot_dynamics(output1_u, output2_u)
+        
+
+        print("#################### Calculating I Q  ####################")
+        state1_u = output1_u.states
+        state2_u = output2_u.states
+        
+        state1_d = output1_d.states
+        state2_d = output2_d.states
+
+        state1_res, state2_res = self.partial_trace_over_qubit(state1_u, state2_u)
+        Q1_u, I1_u, Q2_u, I2_u = self.calc_I_Q(state1_res, state2_res)
+
+        state1_res_d, state2_res_d = self.partial_trace_over_qubit(state1_d, state2_d)
+        Q1_d, I1_d, Q2_d, I2_d = self.calc_I_Q(state1_res_d, state2_res_d)
+
+        print("#################### Plotting I Q ####################")
+        fig, ax = plt.subplots(1,1,dpi=200)
+        self.plot_I_Q(fig, ax, Q1_u, I1_u, Q2_u, I2_u)
+        self.plot_I_Q(fig, ax, Q1_d, I1_d, Q2_d, I2_d)
+        fig.show()
+        
+
+        print("#################### calculating trace distance ####################")
+        
+        trace_dist = self.calculate_trace_distance(state1_u,state2_u)
+
+        print("#################### plotting trace distance ####################")
+        
+        plt.figure(dpi=200)
+        plt.plot(self.tlist, trace_dist)
+        plt.show()
+
+
         
         
 
@@ -347,6 +391,8 @@ Test1_readout = readout_setup(
                 runs_flag = "Seperate"                
 )
 # %%
+Test1_readout.IQWithoutFrameRotation()
+#%%
 Test1_readout.plotStatePopulation()
 
 #%%
