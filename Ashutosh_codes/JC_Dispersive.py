@@ -4,6 +4,7 @@ import numpy as np
 from qutip import *
 import math
 import time
+import plotly.graph_objects as go
 
 # %%
 
@@ -352,10 +353,36 @@ class readout_setup:
         plt.figure(dpi=200)
         plt.plot(self.tlist, trace_dist)
         plt.show()
-
-
+    
+    def plot_dynamics_single(self, output1):
+        if self.SW_flag1 == True:
+            dynamics1_res, dynamics1_qubit = self.calc_dynamics(output1, self.a.transform(self.SW_unitary()), self.sz.transform(self.SW_unitary()))
+        else:
+            dynamics1_res, dynamics1_qubit = self.calc_dynamics(output1, self.a, self.sz)
         
         
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x = self.tlist, y = dynamics1_res, name = self.H_flag1 + " Resonator", mode = "lines" ))
+        fig.add_trace(go.Scatter(x = self.tlist, y = dynamics1_qubit, name = self.H_flag1 + " Qubit", mode = "lines" ))
+        fig.show()
+
+    def print_minima(self, output1):
+        if self.SW_flag1 == True:
+            dynamics1_res, dynamics1_qubit = self.calc_dynamics(output1, self.a.transform(self.SW_unitary()), self.sz.transform(self.SW_unitary()))
+        else:
+            dynamics1_res, dynamics1_qubit = self.calc_dynamics(output1, self.a, self.sz)
+        
+        print(min(dynamics1_qubit))
+        return min(dynamics1_qubit)
+    
+    def qubit_reset(self):
+        self.psi0 = tensor(basis(self.Nr,1),basis(self.Nq,0))
+        #print("#################### Solving Master equation ####################")
+        output1_u = self.solve_master_equation(self.H_flag1, self.SW_flag1)
+
+        self.qubit_min_val = self.print_minima(output1_u)
+        print("#################### Plotting dynamics ####################")
+        self.plot_dynamics_single(output1_u)
 
 
 
@@ -398,4 +425,6 @@ Test1_readout.plotStatePopulation()
 #%%
 Test1_readout.run_simulation()
 
+# %%
+Test1_readout.qubit_reset()
 # %%
