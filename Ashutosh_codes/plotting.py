@@ -361,6 +361,7 @@ def plotPopulation(
                 )
             )
         fig.update_layout(xaxis_title=labelX, yaxis_title=labelY)
+        fig.update_layout(width = 600, height=400)
     else:
         fig, axs = plt.subplots(1, 1, figsize=[10, 5])
         axs.plot(ts / 1e-9, pop_t.T)
