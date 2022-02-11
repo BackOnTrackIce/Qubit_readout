@@ -99,3 +99,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre
+
+output/ 
+.ipynb_checkpoints/
+partial_trace.py
+Qubit_reset_C3_test.ipynb
+Qubit_reset_C3.py
+signal.txt

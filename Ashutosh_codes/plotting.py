@@ -1,3 +1,4 @@
+from operator import le
 from typing import List
 import numpy as np
 from matplotlib import pyplot as plt, colors, cm
@@ -312,6 +313,7 @@ def plotPopulation(
     psi_init: tf.Tensor,
     sequence: List[str],
     labels: List[str] = None,
+    states_to_plot: List[tuple] = None,
     usePlotly=True,
     vertical_lines=False,
     filename: str = None,
@@ -328,6 +330,8 @@ def plotPopulation(
         List of gate names that will be applied to the state
     labels: List[str]
         Optional list of names for the levels. If none, the default list from the experiment will be used.
+    states_to_plot: List[tuple]
+        List of str for the states to plot. If none, all the states would be plotted. 
     usePlotly: bool
         Whether to use Plotly or Matplotlib
     vertical_lines: bool
@@ -351,32 +355,62 @@ def plotPopulation(
     # create the plot
     if usePlotly:
         fig = go.Figure()
-        for i in range(len(pop_t.T[0])):
-            fig.add_trace(
-                go.Scatter(
-                    x=ts / 1e-9,
-                    y=pop_t.T[:, i],
-                    mode="lines",
-                    name=str(legend_labels[i]),
+        if states_to_plot:
+            for i in range(len(pop_t.T[0])):
+                if legend_labels[i] in states_to_plot:
+                    fig.add_trace(
+                        go.Scatter(
+                            x=ts / 1e-9,
+                            y=pop_t.T[:, i],
+                            mode="lines",
+                            name=str(legend_labels[i]),
+                        )
+                    )
+        else:
+            for i in range(len(pop_t.T[0])):
+                fig.add_trace(
+                    go.Scatter(
+                        x=ts / 1e-9,
+                        y=pop_t.T[:, i],
+                        mode="lines",
+                        name=str(legend_labels[i]),
+                    )
                 )
-            )
         fig.update_layout(xaxis_title=labelX, yaxis_title=labelY)
         fig.update_layout(width = 600, height=400)
     else:
         fig, axs = plt.subplots(1, 1, figsize=[10, 5])
-        axs.plot(ts / 1e-9, pop_t.T)
+        if states_to_plot:
+            for i in range(len(pop_t.T[0])):
+                if legend_labels[i] in states_to_plot:
+                    axs.plot(ts / 1e-9, pop_t.T[:,i])
 
-        # set plot properties
-        axs.tick_params(direction="in", left=True, right=True, top=False, bottom=True)
-        axs.set_xlabel(labelX)
-        axs.set_ylabel(labelY)
-        plt.legend(
-            legend_labels,
-            ncol=int(np.ceil(model.tot_dim / 15)),
-            bbox_to_anchor=(1.05, 1.0),
-            loc="upper left",
-        )
-        plt.tight_layout()
+            # set plot properties
+            axs.tick_params(direction="in", left=True, right=True, top=False, bottom=True)
+            axs.set_xlabel(labelX)
+            axs.set_ylabel(labelY)
+            legends = [i for i in legend_labels if i in states_to_plot]
+            plt.legend(
+                legends,
+                ncol=int(np.ceil(model.tot_dim / 15)),
+                bbox_to_anchor=(1.05, 1.0),
+                loc="upper left",
+            )
+            plt.tight_layout()
+        else:
+            axs.plot(ts / 1e-9, pop_t.T)
+
+            # set plot properties
+            axs.tick_params(direction="in", left=True, right=True, top=False, bottom=True)
+            axs.set_xlabel(labelX)
+            axs.set_ylabel(labelY)
+            plt.legend(
+                legend_labels,
+                ncol=int(np.ceil(model.tot_dim / 15)),
+                bbox_to_anchor=(1.05, 1.0),
+                loc="upper left",
+            )
+            plt.tight_layout()
 
     # plot vertical lines; TODO: does not work with Plotly yet!
     if (not usePlotly) and vertical_lines and len(sequence) > 0:
