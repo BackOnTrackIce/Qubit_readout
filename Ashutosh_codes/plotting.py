@@ -435,7 +435,7 @@ def plotPopulation(
     # show and save
     if usePlotly:
         if filename:
-            fig.write_image(filename)
+            fig.write_html(filename+".html")
         fig.show()
     else:
         if filename:
