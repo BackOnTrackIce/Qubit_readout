@@ -104,71 +104,6 @@ drive_qubit = chip.Drive(
     connected=["Q"],
     hamiltonian_func=hamiltonians.x_drive
 )
-
-drives = [drive_qubit]
-
-# %% [markdown]
-# Model
-
-# %%
-model = Mdl(
-    [qubit, resonator], # Individual, self-contained components
-    [drive_qubit, qr_coupling]  # Interactions between components
-)
-model.set_lindbladian(False)
-model.set_dressed(False)
-
-sim_res = 100e9
-awg_res = 2e9
-v2hz = 1e9
-
-generator = Gnr(
-        devices={
-            "LO": devices.LO(name='lo', resolution=sim_res, outputs=1),
-            "AWG": devices.AWG(name='awg', resolution=awg_res, outputs=1),
-            "DigitalToAnalog": devices.DigitalToAnalog(
-                name="dac",
-                resolution=sim_res,
-                inputs=1,
-                outputs=1
-            ),
-            "Response": devices.Response(
-                name='resp',
-                rise_time=Qty(
-                    value=0.3e-9,
-                    min_val=0.05e-9,
-                    max_val=0.6e-9,
-                    unit='s'
-                ),
-                resolution=sim_res,
-                inputs=1,
-                outputs=1
-            ),
-            "Mixer": devices.Mixer(name='mixer', inputs=2, outputs=1),
-            "QuadraturesToValues": devices.QuadraturesToValues(name="quad_to_val", inputs=1, outputs=1),
-            "VoltsToHertz": devices.VoltsToHertz(
-                name='v_to_hz',
-                V_to_Hz=Qty(
-                    value=1e9,
-                    min_val=0.9e9,
-                    max_val=1.1e9,
-                    unit='Hz/V'
-                ),
-                inputs=1,
-                outputs=1
-            )
-        },
-        chains= {
-            "dQ":["AWG", "DigitalToAnalog", "Response", "QuadraturesToValues", "VoltsToHertz"],
-            "R": ["AWG", "DigitalToAnalog", "Response", "QuadraturesToValues", "VoltsToHertz"]
-        }
-    )
-
-generator.devices["AWG"].enable_drag_2()
-
-# %% [markdown]
-# Add a resonator drive
-
 # %%
 drive_resonator = chip.Drive(
     name="dR",
@@ -184,6 +119,10 @@ model = Mdl(
 )
 model.set_lindbladian(False)
 model.set_dressed(False)
+
+sim_res = 100e9
+awg_res = 2e9
+v2hz = 1e9
 
 generator = Gnr(
         devices={
@@ -252,7 +191,7 @@ swap_pulse = pulse.Envelope(
     name="swap_pulse",
     desc="Flattop pluse for SWAP gate",
     params=swap_params,
-    shape=envelopes.gaussian_nonorm
+    shape=envelopes.flattop
 )
 
 nodrive_pulse = pulse.Envelope(
@@ -267,13 +206,6 @@ nodrive_pulse = pulse.Envelope(
     },
     shape=envelopes.no_drive
 )
-
-
-tlist = np.linspace(0,t_swap_gate, 20)
-swap_gate_shape = swap_pulse.shape(tlist, swap_pulse.params)
-
-#tlist = np.linspace(0,t_swap_gate, 1000)
-#plotSignal(tlist, swap_pulse.shape(tlist, swap_pulse.params).numpy())
 
 index = model.get_state_indeces([(2,0),(0,1)])
 state_energies = [model.eigenframe[i].numpy() for i in index]
@@ -293,12 +225,11 @@ carriers = [
     pulse.Carrier(name="carrier", desc="Frequency of the local oscillator", params=carrier_parameters["R"])
 ]
 
-
 qubit_pulse = copy.deepcopy(swap_pulse)
 resonator_pulse = copy.deepcopy(swap_pulse)
 
-
 ideal_gate = np.loadtxt("ideal_gate.csv", delimiter=",", dtype=np.complex128)
+ideal_gate = tf.cast(ideal_gate, dtype=tf.complex128)
 
 swap_gate = gates.Instruction(
     name="swap", targets=[0, 1], t_start=0.0, t_end=t_swap_gate, channels=["dQ", "dR"], 
@@ -329,7 +260,7 @@ psi_init[0][init_state_index] = 1
 init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 sequence = ['swap[0, 1]']
 states_to_plot = [(0,1), (1,0), (0,2), (2,0), (1,1)]
-plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, states_to_plot=states_to_plot, usePlotly=False, filename=f"Second_excited_Before_optimisation.png")
+plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, states_to_plot=states_to_plot, usePlotly=False, filename="Second_excited_Before_optimisation.png")
 
 # %%
 
@@ -359,12 +290,13 @@ parameter_map.print_parameters()
 
 opt = OptimalControl(
     dir_path="./output/",
-    fid_func=fidelities.unitary_infid_set_full,
+    fid_func=fidelities.state_transfer_infid_set_full,
     fid_subspace=["Q", "R"],
     pmap=parameter_map,
     algorithm=algorithms.lbfgs,
     options={"maxfun":200},
-    run_name="SWAP_20_01"
+    run_name="SWAP_20_01",
+    fid_func_kwargs={"psi_0":init_state}
 )
 exp.set_opt_gates(["swap[0, 1]"])
 opt.set_exp(exp)
