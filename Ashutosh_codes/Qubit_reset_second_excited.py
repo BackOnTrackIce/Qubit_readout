@@ -167,24 +167,20 @@ generator = Gnr(
 
 generator.devices["AWG"].enable_drag_2()
 
-
-# %% [markdown]
-# Define SWAP gate for qubit and resonator by using Rabi oscillations
-
 # %%
-t_swap_gate = 200e-9
-sideband = 50e6
 
+t_swap_gate = 50e-9
+sideband = 50e6
 
 swap_params = {
     "amp": Qty(value=1.0,min_val=0.1,max_val=10.0,unit="V"),
-    "t_up": Qty(value=2.0e-9, min_val=0.1e-9, max_val=5.0e-9, unit="s"),
-    "t_down": Qty(value=t_swap_gate-2.0e-9, min_val=t_swap_gate-5.0e-9, max_val=t_swap_gate-0.1e-9, unit="s"),
-    "risefall": Qty(value=1.0e-9, min_val=0.1e-9, max_val=5.0e-9, unit="s"),
+    "t_up": Qty(value=2.0e-9, min_val=0.0, max_val=t_swap_gate, unit="s"),
+    "t_down": Qty(value=t_swap_gate-2.0e-9, min_val=0.0, max_val=t_swap_gate, unit="s"),
+    "risefall": Qty(value=1.0e-9, min_val=0.1e-9, max_val=t_swap_gate/2, unit="s"),
     "xy_angle": Qty(value=0.0,min_val=-0.5 * np.pi,max_val=2.5 * np.pi,unit="rad"),
     "freq_offset": Qty(value=-sideband - 3e6,min_val=-56 * 1e6,max_val=-52 * 1e6,unit="Hz 2pi"),
     "delta": Qty(value=-1,min_val=-5,max_val=3,unit=""),
-    "t_final": Qty(value=t_swap_gate,min_val=0.5*t_swap_gate,max_val=1.5*t_swap_gate,unit="s")
+    "t_final": Qty(value=t_swap_gate,min_val=0.1*t_swap_gate,max_val=1.5*t_swap_gate,unit="s")
 }
 
 swap_pulse = pulse.Envelope(
@@ -207,12 +203,10 @@ nodrive_pulse = pulse.Envelope(
     shape=envelopes.no_drive
 )
 
-index = model.get_state_indeces([(2,0),(0,1)])
-state_energies = [model.eigenframe[i].numpy() for i in index]
-print(abs(state_energies[0] - state_energies[1])/(2*np.pi*1e9))
 
-drive_freq = 9.5095e9
-carrier_freq = [drive_freq, drive_freq]
+drive_freq_qubit = 7.7e9
+drive_freq_resonator = 7.7e9
+carrier_freq = [drive_freq_qubit, drive_freq_resonator]
 carrier_parameters = {
             "Q":{"freq": Qty(value=carrier_freq[0], min_val=0.0, max_val=10e9, unit="Hz 2pi"),
             "framechange": Qty(value=0.0, min_val=-np.pi, max_val=3 * np.pi, unit="rad")},
@@ -243,7 +237,7 @@ swap_gate.add_component(copy.deepcopy(carriers[1]), "dR")
 gates_arr = [swap_gate]
 
 # %%
-init_state_index = model.get_state_indeces([(2,0)])[0]
+init_state_index = model.get_state_indeces([(1,0)])[0]
 
 # %%
 print("----------------------------------------------")
@@ -260,7 +254,7 @@ psi_init[0][init_state_index] = 1
 init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 sequence = ['swap[0, 1]']
 states_to_plot = [(0,1), (1,0), (0,2), (2,0), (1,1)]
-plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, states_to_plot=states_to_plot, usePlotly=False, filename="Second_excited_Before_optimisation.png")
+plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, states_to_plot=states_to_plot, usePlotly=False, filename="Full_swap_Before_optimisation.png")
 
 # %%
 
@@ -306,8 +300,8 @@ print(opt.current_best_goal)
 print(parameter_map.print_parameters())
 
 # %%
-plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False, filename="Second_excited_After_optimization.png")
-plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False, states_to_plot=states_to_plot, filename="Second_excited_After_optimization_selected.png")
+plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False, filename="Full_swap_After_optimization.png")
+plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False, states_to_plot=states_to_plot, filename="Full_swap_After_optimization_selected.png")
 
 # %%
 print("----------------------------------------------")
