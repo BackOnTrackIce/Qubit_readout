@@ -259,7 +259,7 @@ plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, states_to_plot=s
 parameter_map.store_values("current_vals.c3log")
 exp.write_config("qubit_reset_experiment.hjson")
 # %%
-"""
+
 print("----------------------------------------------")
 print("-----------Starting optimal control-----------")
 
@@ -308,4 +308,3 @@ plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False,
 # %%
 print("----------------------------------------------")
 print("-----------Finished optimal control-----------")
-"""

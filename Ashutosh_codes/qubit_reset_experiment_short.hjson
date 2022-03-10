@@ -294,7 +294,7 @@
           ]
         ]
       }
-      gate_length: 2.5e-07
+      gate_length: 5e-08
       drive_channels:
       {
         dQ:
@@ -348,33 +348,33 @@
               }
               t_final:
               {
-                value: 2.5e-07
-                min_val: 2.5e-08
-                max_val: 3.75e-07
+                value: 5e-08
+                min_val: 5e-09
+                max_val: 7.5e-08
                 unit: s
                 symbol: \alpha
               }
               t_up:
               {
-                value: 2.0000000000000018e-09
+                value: 1.999999999999999e-09
                 min_val: 0.0
-                max_val: 2.5e-07
+                max_val: 5e-08
                 unit: s
                 symbol: \alpha
               }
               t_down:
               {
-                value: 2.48e-07
+                value: 4.8e-08
                 min_val: 0.0
-                max_val: 2.5e-07
+                max_val: 5e-08
                 unit: s
                 symbol: \alpha
               }
               risefall:
               {
-                value: 1.000000000000002e-09
+                value: 1e-09
                 min_val: 1e-10
-                max_val: 1e-07
+                max_val: 2.5e-08
                 unit: s
                 symbol: \alpha
               }
@@ -457,33 +457,33 @@
               }
               t_final:
               {
-                value: 2.5e-07
-                min_val: 2.5e-08
-                max_val: 3.75e-07
+                value: 5e-08
+                min_val: 5e-09
+                max_val: 7.5e-08
                 unit: s
                 symbol: \alpha
               }
               t_up:
               {
-                value: 2.0000000000000018e-09
+                value: 1.999999999999999e-09
                 min_val: 0.0
-                max_val: 2.5e-07
+                max_val: 5e-08
                 unit: s
                 symbol: \alpha
               }
               t_down:
               {
-                value: 2.48e-07
+                value: 4.8e-08
                 min_val: 0.0
-                max_val: 2.5e-07
+                max_val: 5e-08
                 unit: s
                 symbol: \alpha
               }
               risefall:
               {
-                value: 1.000000000000002e-09
+                value: 1e-09
                 min_val: 1e-10
-                max_val: 1e-07
+                max_val: 2.5e-08
                 unit: s
                 symbol: \alpha
               }

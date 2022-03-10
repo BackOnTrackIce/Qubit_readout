@@ -256,6 +256,7 @@ sequence = ['swap[0, 1]']
 states_to_plot = [(0,1), (1,0), (0,2), (2,0), (1,1)]
 plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, states_to_plot=states_to_plot, usePlotly=False, filename="Full_swap_Before_optimisation.png")
 
+exp.write_config("qubit_reset_experiment_short.hjson")
 # %%
 
 print("----------------------------------------------")
