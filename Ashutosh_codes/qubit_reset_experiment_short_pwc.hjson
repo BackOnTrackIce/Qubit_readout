@@ -1,0 +1,968 @@
+{
+  instructions:
+  {
+    "swap[0, 1]":
+    {
+      name: swap
+      targets:
+      [
+        0
+        1
+      ]
+      params:
+      {
+        use_t_before: false
+      }
+      _Instruction__options:
+      {
+        dQ:
+        {
+          swap_pulse: {}
+          carrier: {}
+        }
+        dR:
+        {
+          swap_pulse: {}
+          carrier: {}
+        }
+      }
+      fixed_t_end: true
+      ideal:
+      {
+        __array__:
+        [
+          [
+            {
+              __complex__: (1+0j)
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+          ]
+          [
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: (1+0j)
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+          ]
+          [
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: (1+0j)
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+          ]
+          [
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: (1+0j)
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+          ]
+          [
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: (1+0j)
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+          ]
+          [
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: (1+0j)
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+          ]
+          [
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: (1+0j)
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+          ]
+          [
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: (1+0j)
+            }
+            {
+              __complex__: 0j
+            }
+          ]
+          [
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: 0j
+            }
+            {
+              __complex__: (1+0j)
+            }
+          ]
+        ]
+      }
+      gate_length: 5.1e-08
+      drive_channels:
+      {
+        dQ:
+        {
+          swap_pulse:
+          {
+            name: swap_pulse
+            c3type: Envelope
+            shape: pwc_shape
+            params:
+            {
+              amp:
+              {
+                value: 1.0
+                min_val: -1.0
+                max_val: 1.5
+                unit: V
+                symbol: \alpha
+              }
+              delta:
+              {
+                value: 0.0
+                min_val: -5.0
+                max_val: 5.0
+                unit: V
+                symbol: \alpha
+              }
+              freq_offset:
+              {
+                value: 0.0
+                min_val: -1.0
+                max_val: 1.0
+                unit: Hz 2pi
+                symbol: \alpha
+              }
+              xy_angle:
+              {
+                value: 0.0
+                min_val: -1.0
+                max_val: 1.0
+                unit: rad
+                symbol: \alpha
+              }
+              sigma:
+              {
+                value: 4.999999969612645e-09
+                min_val: -2.0
+                max_val: 2.0
+                unit: s
+                symbol: \alpha
+              }
+              t_final:
+              {
+                value: 5.000000000000001e-08
+                min_val: 1e-08
+                max_val: 3e-07
+                unit: s
+                symbol: \alpha
+              }
+              t_bin_start:
+              {
+                value: 0.0
+                min_val: 0.0
+                max_val: 1e-09
+                unit: s
+                symbol: \alpha
+              }
+              t_bin_end:
+              {
+                value: 5e-08
+                min_val: 1e-08
+                max_val: 2e-07
+                unit: s
+                symbol: \alpha
+              }
+              inphase:
+              {
+                value:
+                [
+                  6.778039995936069e-08
+                  0.00014925351039274393
+                  0.024880091578512675
+                  0.37925145412184186
+                  0.9110300284616968
+                  0.9986576060976888
+                  0.9999983900517752
+                  0.9999999998612397
+                  0.9999999999999991
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  0.999999999998867
+                  0.9999999589560755
+                  0.9998955098302247
+                  0.979979872715729
+                  0.6549653251461551
+                  0.10459216385444614
+                  0.0018049251673293853
+                  2.4979913531564257e-06
+                  2.493250605972719e-10
+                  1.7208456881689926e-15
+                  0.0
+                  0.0
+                  0.0
+                  0.0
+                  0.0
+                ]
+                min_val: 0.0
+                max_val: 1.0
+                unit: ""
+                symbol: \alpha
+              }
+            }
+            drag: false
+          }
+          carrier:
+          {
+            c3type: Carrier
+            params:
+            {
+              freq:
+              {
+                value: 7779923114.087875
+                min_val: 0.0
+                max_val: 10000000000.0
+                unit: Hz 2pi
+                symbol: \alpha
+              }
+              framechange:
+              {
+                value: 0.0
+                min_val: -3.141592653589793
+                max_val: 9.42477796076938
+                unit: rad
+                symbol: \alpha
+              }
+            }
+            name: carrier
+          }
+        }
+        dR:
+        {
+          swap_pulse:
+          {
+            name: swap_pulse
+            c3type: Envelope
+            shape: pwc_shape
+            params:
+            {
+              amp:
+              {
+                value: 1.0
+                min_val: -1.0
+                max_val: 1.5
+                unit: V
+                symbol: \alpha
+              }
+              delta:
+              {
+                value: 0.0
+                min_val: -5.0
+                max_val: 5.0
+                unit: V
+                symbol: \alpha
+              }
+              freq_offset:
+              {
+                value: 0.0
+                min_val: -1.0
+                max_val: 1.0
+                unit: Hz 2pi
+                symbol: \alpha
+              }
+              xy_angle:
+              {
+                value: 0.0
+                min_val: -1.0
+                max_val: 1.0
+                unit: rad
+                symbol: \alpha
+              }
+              sigma:
+              {
+                value: 4.999999969612645e-09
+                min_val: -2.0
+                max_val: 2.0
+                unit: s
+                symbol: \alpha
+              }
+              t_final:
+              {
+                value: 5.000000000000001e-08
+                min_val: 1e-08
+                max_val: 3e-07
+                unit: s
+                symbol: \alpha
+              }
+              t_bin_start:
+              {
+                value: 0.0
+                min_val: 0.0
+                max_val: 1e-09
+                unit: s
+                symbol: \alpha
+              }
+              t_bin_end:
+              {
+                value: 5e-08
+                min_val: 1e-08
+                max_val: 2e-07
+                unit: s
+                symbol: \alpha
+              }
+              inphase:
+              {
+                value:
+                [
+                  0.0
+                  0.0
+                  0.014045219193723368
+                  0.9999996221301148
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  1.0
+                  0.9999997876157556
+                  0.01853576911944027
+                  0.0
+                  0.0
+                  0.0
+                  0.0
+                ]
+                min_val: 0.0
+                max_val: 1.0
+                unit: ""
+                symbol: \alpha
+              }
+            }
+            drag: false
+          }
+          carrier:
+          {
+            c3type: Carrier
+            params:
+            {
+              freq:
+              {
+                value: 7535914647.944696
+                min_val: 0.0
+                max_val: 10000000000.0
+                unit: Hz 2pi
+                symbol: \alpha
+              }
+              framechange:
+              {
+                value: 0.0
+                min_val: -3.141592653589793
+                max_val: 9.42477796076938
+                unit: rad
+                symbol: \alpha
+              }
+            }
+            name: carrier
+          }
+        }
+      }
+    }
+  }
+  model:
+  {
+    Qubits:
+    {
+      Q:
+      {
+        c3type: Qubit
+        params:
+        {
+          freq:
+          {
+            value: 7860000000.0
+            min_val: 1000000000.0
+            max_val: 8000000000.0
+            unit: Hz 2pi
+            symbol: \alpha
+          }
+          anhar:
+          {
+            value: -264000000.0
+            min_val: -380000000.0
+            max_val: -120000000.00000003
+            unit: Hz 2pi
+            symbol: \alpha
+          }
+          t1:
+          {
+            value: 2.7e-05
+            min_val: 1e-06
+            max_val: 9e-05
+            unit: s
+            symbol: \alpha
+          }
+          t2star:
+          {
+            value: 3.900000000000106e-05
+            min_val: 1e-05
+            max_val: 0.09
+            unit: s
+            symbol: \alpha
+          }
+          temp:
+          {
+            value: 0.05
+            min_val: 0.0
+            max_val: 0.12
+            unit: K
+            symbol: \alpha
+          }
+        }
+        hilbert_dim: 3
+      }
+      R:
+      {
+        c3type: ReadoutResonator
+        params:
+        {
+          freq:
+          {
+            value: 6020000000.0
+            min_val: 0.0
+            max_val: 8000000000.0
+            unit: Hz 2pi
+            symbol: \alpha
+          }
+          t1:
+          {
+            value: 2.7e-05
+            min_val: 1e-06
+            max_val: 9e-05
+            unit: s
+            symbol: \alpha
+          }
+          t2star:
+          {
+            value: 3.900000000000106e-05
+            min_val: 1e-05
+            max_val: 0.09
+            unit: s
+            symbol: \alpha
+          }
+          temp:
+          {
+            value: 0.05
+            min_val: 0.0
+            max_val: 0.12
+            unit: K
+            symbol: \alpha
+          }
+        }
+        hilbert_dim: 3
+      }
+    }
+    Couplings:
+    {
+      dQ:
+      {
+        c3type: Drive
+        params: {}
+        hamiltonian_func: x_drive
+        connected:
+        [
+          Q
+        ]
+      }
+      dR:
+      {
+        c3type: Drive
+        params: {}
+        hamiltonian_func: x_drive
+        connected:
+        [
+          R
+        ]
+      }
+      Q-R:
+      {
+        c3type: Coupling
+        params:
+        {
+          strength:
+          {
+            value: 129999999.99999997
+            min_val: -999.9999999999999
+            max_val: 200000000.0
+            unit: Hz 2pi
+            symbol: \alpha
+          }
+        }
+        hamiltonian_func: jaynes_cummings
+        connected:
+        [
+          Q
+          R
+        ]
+      }
+    }
+    Tasks: {}
+    max_excitations: 0
+  }
+  generator:
+  {
+    Devices:
+    {
+      LO:
+      {
+        c3type: LO
+        inputs: 0
+        outputs: 1
+        params: {}
+        resolution: 100000000000.0
+      }
+      AWG:
+      {
+        c3type: AWG
+        inputs: 0
+        outputs: 1
+        params: {}
+        resolution: 2000000000
+        options: drag_2
+      }
+      DigitalToAnalog:
+      {
+        c3type: DigitalToAnalog
+        inputs: 1
+        outputs: 1
+        params: {}
+        resolution: 100000000000.0
+      }
+      Response:
+      {
+        c3type: Response
+        inputs: 1
+        outputs: 1
+        params:
+        {
+          rise_time:
+          {
+            value: 3e-10
+            min_val: 5e-11
+            max_val: 6e-10
+            unit: s
+            symbol: \alpha
+          }
+        }
+        resolution: 100000000000.0
+      }
+      Mixer:
+      {
+        c3type: Mixer
+        inputs: 2
+        outputs: 1
+        params: {}
+        resolution: 0
+      }
+      VoltsToHertz:
+      {
+        c3type: VoltsToHertz
+        inputs: 1
+        outputs: 1
+        params:
+        {
+          V_to_Hz:
+          {
+            value: 1000000000.0
+            min_val: 900000000.0
+            max_val: 1100000000.0
+            unit: Hz/V
+            symbol: \alpha
+          }
+        }
+        resolution: 0
+      }
+    }
+    Chains:
+    {
+      dQ:
+      [
+        LO
+        AWG
+        DigitalToAnalog
+        Response
+        Mixer
+        VoltsToHertz
+      ]
+      dR:
+      [
+        LO
+        AWG
+        DigitalToAnalog
+        Response
+        Mixer
+        VoltsToHertz
+      ]
+    }
+  }
+  options:
+  {
+    propagate_batch_size: null
+    use_control_fields: true
+    overwrite_propagators: true
+    stop_partial_propagator_gradient: true
+  }
+}
