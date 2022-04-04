@@ -3,10 +3,14 @@ from typing import List
 import numpy as np
 from matplotlib import pyplot as plt, colors, cm
 import plotly.graph_objects as go
+import pylab
+from mpl_toolkits.mplot3d import Axes3D
 
 from utilities_functions import getQubitsPopulation
 from c3.experiment import Experiment
+import c3.utils.tf_utils as tf_utils
 import tensorflow as tf
+import math
 
 
 def plotSignal(time, signal, filename=None):
@@ -298,7 +302,10 @@ def calculatePopulation(
     # calculate the time dependent level population
     model = exp.pmap.model
     dUs = exp.partial_propagators
-    psi_t = psi_init.numpy()
+    if model.lindbladian:
+        psi_t = tf_utils.tf_dm_to_vec(psi_init).numpy()
+    else:
+        psi_t = psi_init.numpy()
     pop_t = exp.populations(psi_t, model.lindbladian)
     for gate in sequence:
         for du in dUs[gate]:
@@ -511,3 +518,80 @@ def plotSplittedPopulation(
         plt.savefig(filename, bbox_inches="tight", dpi=100)
     plt.show()
     plt.close()
+
+
+def calculateLaguerrePolynomial(
+    n: int, 
+    R: tf.Tensor
+):
+    beta = 2*R
+    Ln = tf.zeros_like(beta, dtype=tf.double)
+    for m in range(n+1):
+        Ln += (-(tf.abs(beta)**2))**m * math.comb(n, m)/math.factorial(m)
+    Ln = tf.cast(Ln, dtype=tf.complex128)
+    return Ln
+
+
+def calculateStateWignerFunction(
+    state: tf.Tensor,
+    xvec: np.array,
+    yvec: np.array
+) -> tf.Tensor:
+    
+    X, Y = tf.meshgrid(xvec, yvec)
+    Wmat = tf.zeros_like(X, dtype=tf.complex128)
+    X = tf.cast(X, dtype=tf.complex128)
+    Y = tf.cast(Y, dtype=tf.complex128)
+    R = X + 1j * Y
+    coeff = (2/np.pi) * tf.exp(-2*tf.abs(R)**2)
+    coeff = tf.cast(coeff, dtype=tf.complex128)
+
+    for n in range(state.shape[0]):
+        Wmat += coeff *(-1)**(n) * calculateLaguerrePolynomial(n, R) * state[n][0]
+    
+    return Wmat
+
+
+def plotWignerFunction(
+    state: tf.Tensor,
+    xvec: np.array,
+    yvec: np.array
+) -> None:
+    """
+    Plots wigner function of the state.
+    An iterative method is used for calculating the winger function.
+    This is calculated as W = \sum_n \psi_{n} W_{n}, 
+    where \psi_{n} are the elements of state vector and W_{n} are the
+    wigner functions corresponding to the state \ket{n}.   
+     
+    # To-Do - Make wigner function for density matrices as well.
+
+    Parameters
+    ----------
+    exp: Experiment
+        The experiment containing the model and propagators
+    state: tf.tensor
+        State or density matrix.
+    xvec: np.array
+        X-coordinates where to calculate the wigner function.
+    yvec: np.array
+        Y-coordinates where to calculate the wigner function.
+    -------
+    """
+
+    if state.shape[0] == state.shape[1]:
+        print("Not implemented now")
+        return 0
+    else:
+        Wmat = calculateStateWignerFunction(state, xvec, yvec)
+
+    
+    fig = plt.figure()
+    ax = fig.gca(projection="3d")
+    surf = ax.plot_surface(np.real(X), np.real(Y), np.real(Wmat))
+    plt.show()
+    
+    plt.imshow(np.real(Wmat))
+    plt.colorbar()
+    plt.show()
+
