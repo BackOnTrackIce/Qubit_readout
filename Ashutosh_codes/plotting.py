@@ -553,7 +553,7 @@ def calculateStateWignerFunction(
 
 
 def plotWignerFunction(
-    state: tf.Tensor,
+    states: List[tf.Tensor],
     xvec: np.array,
     yvec: np.array
 ) -> None:
@@ -578,12 +578,15 @@ def plotWignerFunction(
         Y-coordinates where to calculate the wigner function.
     -------
     """
-
-    if state.shape[0] == state.shape[1]:
-        print("Not implemented now")
-        return 0
-    else:
-        Wmat = calculateStateWignerFunction(state, xvec, yvec)
+    X, Y = tf.meshgrid(xvec, yvec)
+    Wmat = tf.zeros_like(X, dtype=tf.complex128)
+    
+    for state in states:
+        if state.shape[0] == state.shape[1]:
+            print("Not implemented now")
+            return 0
+        else:
+            Wmat += calculateStateWignerFunction(state, xvec, yvec)
 
     
     fig = plt.figure()
@@ -594,4 +597,240 @@ def plotWignerFunction(
     plt.imshow(np.real(Wmat))
     plt.colorbar()
     plt.show()
+
+def calculateState(
+    exp: Experiment,
+    psi_init: tf.Tensor,
+    sequence: List[str]
+):
+
+    """
+    Calculates the state of system with time. Returns the state for a coherent simulation.
+    For a Master equation simulation this returns a list of vectorized density matrices.
+
+    Parameters
+    ----------
+    exp: Experiment,
+        The experiment containing the model and propagators
+    psi_init: tf.Tensor,
+        Initial state vector or density matrix
+    sequence: List[str]
+        List of gate names that will be applied to the state
+
+    Returns
+    -------
+    psi_list: List[tf.Tensor]
+        List of states
+    """
+
+    model = exp.pmap.model
+    dUs = exp.partial_propagators
+    if model.lindbladian:
+        psi_t = tf_utils.tf_dm_to_vec(psi_init)
+    else:
+        psi_t = psi_init
+    psi_list = []
+    for gate in sequence:
+        for du in dUs[gate]:
+            psi_t = tf.matmul(du, psi_t)
+            psi_list.append(psi_t)
+
+    return psi_list
+
+def calculateExpectationValue(states, Op, lindbladian):
+    """
+    Calculates expectation value of the operator Op for the states.
+    If lindbladian is True, then states should be vectorized density matrices.
+
+    Args:
+        states (tf.Tensor): State vector or density matrices
+        Op (tf.Tensor): Operator
+        lindbladian (bool): True for Master equation simulation
+
+    Returns:
+        expect_val (List[tf.complex128]): Expectation value of operator Op
+    """
+    expect_val = []
+    for i in states:
+        if lindbladian:
+            state = tf_utils.tf_vec_to_dm(i)
+            expect_val.append(tf.linalg.trace(tf.matmul(Op, state)))
+        else:
+            expect_val.append(tf.matmul(tf.matmul(tf.transpose(i, conjugate=True), Op),i)[0,0])
+    return expect_val
+
+
+def plotNumberOperator(
+    exp: Experiment, 
+    init_state: tf.Tensor,
+    sequence: List[str]
+):
+    
+    model = exp.pmap.model
+    psi_list = calculateState(exp, init_state, sequence)
+
+    aR = tf.convert_to_tensor(model.ann_opers[1], dtype=tf.complex128)
+    aR_dag = tf.transpose(aR, conjugate=True)
+    NR = tf.matmul(aR_dag,aR)
+    expect_val_R = calculateExpectationValue(psi_list, NR)
+
+    aQ = tf.convert_to_tensor(model.ann_opers[0], dtype=tf.complex128)
+    aQ_dag = tf.transpose(aQ, conjugate=True)
+    NQ = tf.matmul(aQ_dag, aQ)
+    expect_val_Q = calculateExpectationValue(psi_list, NQ)
+
+
+    ts = exp.ts
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x = ts, y = np.real(expect_val_R), mode = "lines", name="Resonator"))
+    fig.add_trace(go.Scatter(x = ts, y = np.real(expect_val_Q), mode = "lines", name="Qubit"))
+    fig.show()
+
+
+
+def frameOfDrive(exp, psi_list, freq, k):
+    """
+    Rotates the states to the frame of drive.
+
+    Args:
+        exp (Experiment): Experiment
+        psi_list (List[tf.Tensor]): List of states/vectorized density matrices
+        freq (float): Frequency of rotating frame
+        k (Int): Compute the IQ plane points with a spacing of k points in between.
+                 This is just to decrease the computational overhead.
+
+    Returns:
+        psi_rotated (List[tf.Tensor]): List of states in the rotated frame.
+    """
+    
+    model = exp.pmap.model
+    aR = tf.convert_to_tensor(model.ann_opers[1], dtype = tf.complex128)
+    aQ = tf.convert_to_tensor(model.ann_opers[0], dtype = tf.complex128)
+
+    n = len(psi_list)
+
+    aR_dag = tf.transpose(aR, conjugate=True)
+    NR = tf.matmul(aR_dag,aR)
+
+    aQ_dag = tf.transpose(aQ, conjugate=True)
+    NQ = tf.matmul(aQ_dag, aQ)
+
+    ts = exp.ts[::k]
+    ts = tf.cast(ts, dtype=tf.complex128)
+    
+    I = tf.eye(len(aR), dtype=tf.complex128)
+    
+    psi_rotated = []
+    
+    for i in range(n):
+        U = tf.linalg.expm(1j*2*np.pi*freq*(NR + NQ)*ts[i])
+        if model.lindbladian:
+            U_dag = tf.linalg.expm(-1j*2*np.pi*freq*(NR + NQ)*ts[i]) # Change this to conjugate transpose
+            rho_i = tf_utils.tf_vec_to_dm(psi_list[i])
+            psi_rotated.append(tf.matmul(tf.matmul(U_dag, rho_i), U))    ## Check this. Now it is U_dag*rho*U but I think it should be U*rho*U_dag
+        else:
+            psi_rotated.append(tf.matmul(U, psi_list[i]))
+
+    return psi_rotated
+
+
+def plotIQ(
+        exp: Experiment, 
+        sequence: List[str], 
+        annihilation_operator: tf.Tensor,
+        frequency: float,
+        spacing=100,
+        usePlotly=False
+):
+    
+    """
+    Calculate and plot the I-Q values for resonator 
+
+    Parameters
+    ----------
+    exp: Experiment,
+ 
+    sequence: List[str], 
+
+    annihilation_operator: tf.Tensor
+
+    frequency: float
+
+
+    Returns
+    -------
+        
+    """
+    model = exp.pmap.model
+    annihilation_operator = tf.convert_to_tensor(annihilation_operator, dtype=tf.complex128)
+    
+    state_index = exp.pmap.model.get_state_index((0,0))
+    psi_init_0 = [[0] * model.tot_dim]
+    psi_init_0[0][state_index] = 1
+    init_state_0 = tf.transpose(tf.constant(psi_init_0, tf.complex128))
+    
+    if model.lindbladian:
+        init_state_0 = tf_utils.tf_state_to_dm(init_state_0)
+
+    psi_list = calculateState(exp, init_state_0, sequence)
+    psi_list = psi_list[::spacing]
+    psi_list_0 =  frameOfDrive(exp, psi_list, frequency, spacing)
+    expect_val_0 = calculateExpectationValue(psi_list_0, annihilation_operator, model.lindbladian)
+    Q0 = np.real(expect_val_0)
+    I0 = np.imag(expect_val_0)
+    
+
+    state_index = exp.pmap.model.get_state_index((1,0))
+    psi_init_1 = [[0] * model.tot_dim]
+    psi_init_1[0][state_index] = 1
+    init_state_1 = tf.transpose(tf.constant(psi_init_1, tf.complex128))
+    
+    if model.lindbladian:
+        init_state_1 = tf_utils.tf_state_to_dm(init_state_1)
+
+    psi_list = calculateState(exp, init_state_1, sequence)
+    psi_list = psi_list[::spacing]
+    psi_list_1 =  frameOfDrive(exp, psi_list, frequency, spacing)
+    expect_val_1 = calculateExpectationValue(psi_list_1, annihilation_operator, model.lindbladian)
+    Q1 = np.real(expect_val_1)
+    I1 = np.imag(expect_val_1)
+
+
+    ts = exp.ts[::spacing]
+    dist = []
+    for t in range(len(ts)):
+        dist.append(np.sqrt((Q0[t] - Q1[t])**2 + (I0[t] - I1[t])**2))
+
+
+    if usePlotly:
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x = Q0, y = I0, mode = "lines", name="Ground state"))
+        fig.add_trace(go.Scatter(x = Q1, y = I1, mode = "lines", name ="Excited state"))
+        fig.show()
+        
+    #fig.write_image("Readout_IQ.png")
+    else:
+        plt.figure(dpi=100)
+        plt.scatter(Q0, I0, label="Ground state")
+        plt.scatter(Q1, I1, label="Excited state")
+        plt.legend()
+        plt.show()
+
+
+    final_state_0 = psi_list_0[-1]
+    final_state_1 = psi_list_1[-1]
+    if model.lindbladian:
+        final_state_0 = tf_utils.tf_vec_to_dm(final_state_0)
+        final_state_1 = tf_utils.tf_vec_to_dm(final_state_1)
+    
+    xvec = np.linspace(-10,10,100)
+    yvec = np.linspace(-10,10,100)
+    plotWignerFunction([final_state_0, final_state_1], xvec, yvec)
+
+    plt.figure(dpi=100)
+    plt.plot(ts, dist)
+    plt.show()
+
+
 
