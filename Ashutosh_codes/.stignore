@@ -43,7 +43,7 @@ pip-delete-this-directory.txt
 *.pot
 
 # Django stuff:
-*.log
+#*.log
 local_settings.py
 db.sqlite3
 

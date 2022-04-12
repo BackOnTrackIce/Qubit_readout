@@ -39,3 +39,13 @@ Ashutosh_codes/Full_swap_*
 Ashutosh_codes/Short_swap_*
 Ashutosh_codes/Test_Qubit_reset_C3.ipynb
 Ashutosh_codes/Short_swap_After_optimization_selected.png
+Ashutosh_codes/best_point_iq_opt.txt
+Ashutosh_codes/best_point_iq_opt2.txt
+Ashutosh_codes/best_point_open_loop.txt
+Ashutosh_codes/best_point.txt
+Ashutosh_codes/current_vals_two_carriers.c3log
+Ashutosh_codes/open_loop_iq_opt2.txt
+Ashutosh_codes/open_loop.txt
+Ashutosh_codes/Readout_IQ.png
+Ashutosh_codes/Readout_population.png
+Ashutosh_codes/setup_c3_cluster.sh
