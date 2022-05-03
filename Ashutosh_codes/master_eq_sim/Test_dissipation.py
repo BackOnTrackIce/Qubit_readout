@@ -1,4 +1,3 @@
-#%%
 import os
 from re import I
 import numpy as np
@@ -32,8 +31,8 @@ import plotly.graph_objects as go
 from plotting import *
 from utilities_functions import *
 
-import faulthandler
-#%%
+import scipy as sp
+
 qubit_levels = 3
 qubit_frequency = 7.86e9
 qubit_anharm = -264e6
@@ -52,7 +51,7 @@ qubit = chip.Qubit(
     temp=Qty(value=qubit_temp,min_val=0.0,max_val=0.12,unit='K')
 )
 
-resonator_levels = 5
+resonator_levels = 3
 resonator_frequency = 6.02e9
 resonator_t1 = 235e-9
 resonator_t2star = 39e-6
@@ -142,6 +141,7 @@ generator = Gnr(
                 outputs=1
             ),
             "Mixer": devices.Mixer(name='mixer', inputs=2, outputs=1),
+            "QuadraturesToValues": devices.QuadraturesToValues(name="quad_to_val", inputs=1, outputs=1),
             "VoltsToHertz": devices.VoltsToHertz(
                 name='v_to_hz',
                 V_to_Hz=Qty(
@@ -155,22 +155,8 @@ generator = Gnr(
             )
         },
         chains= {
-            "dQ":{
-                "LO": [],
-                "AWG": [],
-                "DigitalToAnalog": ["AWG"],
-                "Response": ["DigitalToAnalog"],
-                "Mixer": ["LO", "Response"],
-                "VoltsToHertz": ["Mixer"]
-            },
-            "dR":{
-                "LO": [],
-                "AWG": [],
-                "DigitalToAnalog": ["AWG"],
-                "Response": ["DigitalToAnalog"],
-                "Mixer": ["LO", "Response"],
-                "VoltsToHertz": ["Mixer"]
-            }
+            "dQ":["LO", "AWG", "DigitalToAnalog", "Response", "Mixer", "VoltsToHertz"],
+            "dR":["LO", "AWG", "DigitalToAnalog", "Response", "Mixer", "VoltsToHertz"]
         }
     )
 
@@ -407,18 +393,14 @@ Readout_gate.add_component(resonator_pulse, "dR")
 Readout_gate.add_component(copy.deepcopy(carriers[1]), "dR")
 
 readout_gates = [Readout_gate]
-#%%
 
 parameter_map = PMap(instructions=readout_gates, model=model, generator=generator)
 exp = Exp(pmap=parameter_map)
 
-model.set_FR(False)
 model.set_lindbladian(True)
 exp.set_opt_gates(['Readout[1]'])
 unitaries = exp.compute_propagators()
-print(unitaries)
 
-#%%
 psi_init = [[0] * model.tot_dim]
 init_state_index = model.get_state_indeces([(0,0)])[0]
 psi_init[0][init_state_index] = 1
@@ -430,7 +412,6 @@ plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False,
 
 plotIQ(exp, sequence, model.ann_opers[1], resonator_frequency, resonator_frequency, spacing=100, usePlotly=False)
 
-#%%
 
 print("######### Starting Optimization ##########")
 
@@ -509,8 +490,6 @@ opt = OptimalControl(
 exp.set_opt_gates(["Readout[1]"])
 opt.set_exp(exp)
 
-
-faulthandler.enable()
 opt.optimize_controls()
 print(opt.current_best_goal)
 print(parameter_map.print_parameters())
