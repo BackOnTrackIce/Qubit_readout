@@ -52,7 +52,7 @@ qubit = chip.Qubit(
     temp=Qty(value=qubit_temp,min_val=0.0,max_val=0.12,unit='K')
 )
 
-resonator_levels = 5
+resonator_levels = 3
 resonator_frequency = 6.02e9
 resonator_t1 = 235e-9
 resonator_t2star = 39e-6
@@ -415,6 +415,11 @@ exp = Exp(pmap=parameter_map)
 model.set_FR(False)
 model.set_lindbladian(True)
 exp.set_opt_gates(['Readout[1]'])
+exp.propagate_batch_size = 1000
+#%%
+model.controllability
+exp.propagate_batch_size
+#%%
 unitaries = exp.compute_propagators()
 print(unitaries)
 
@@ -426,7 +431,7 @@ init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
 sequence = ['Readout[1]']
-plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False, filename="Test_master_pop_2.png")
+plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False)#, filename="Test_master_pop_2.png")
 
 plotIQ(exp, sequence, model.ann_opers[1], resonator_frequency, resonator_frequency, spacing=100, usePlotly=False)
 
@@ -493,7 +498,7 @@ fid_params = {
     "cutoff_distance": d_max,
     "lindbladian": model.lindbladian
 }
-
+#%%
 
 
 opt = OptimalControl(
@@ -508,13 +513,12 @@ opt = OptimalControl(
 )
 exp.set_opt_gates(["Readout[1]"])
 opt.set_exp(exp)
-
-
-faulthandler.enable()
+#%%
 opt.optimize_controls()
 print(opt.current_best_goal)
 print(parameter_map.print_parameters())
 
+#%%
 
 exp.write_config("Test_master_eq.hjson")
 
@@ -526,3 +530,14 @@ parameter_map.store_values("Test_master_eq_optimized_values_run1.c3log")
 plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False, filename="Test_master_pop_after_opt.png")
 
 plotIQ(exp, sequence, model.ann_opers[1], resonator_frequency, resonator_frequency, spacing=100, usePlotly=False)
+#%%
+opt = OptimalControl(
+    dir_path="./output/",
+    fid_func=fidelities.unitary_infid_set,
+    fid_subspace=["Q", "R"],
+    pmap=parameter_map,
+    algorithm=algorithms.lbfgs,
+    options={"maxfun":250},
+    run_name="Readout_IQ",
+    fid_func_kwargs={"params":fid_params}
+)

@@ -834,3 +834,31 @@ def plotIQ(
 
 
 
+def plotPulseShapes(pmap, sequence, drive_channels, pulse_names, ts):
+    """
+    Plot the pulse shapes from the parameter map.
+
+    Args:
+        pmap (ParameterMap): Parameter Map
+        sequence (List[str]): List of strings of gates.
+        drive_channels (List[str]): List of string of drive channel names.
+        pulse_names (List[str]): List of string of names of pulses
+        ts (List): Array of time points to plot
+    """
+
+    pmap_dict = pmap.asdict()
+    pulse_list = []
+    pulse_shapes = []
+    for gate in sequence:
+        for drive, pulse in zip(drive_channels, pulse_names):
+            pulse_list.append(pmap_dict[gate]["drive_channels"][drive][pulse])
+
+    for pulse in pulse_list:
+        pulse_shapes.append(pulse.shape(ts, pulse.params) * pulse.params["amp"])
+
+
+    plt.figure(dpi=100)
+    for i in range(len(pulse_shapes)):
+        plt.plot(ts, pulse_shapes[i], label=drive_channels[i])
+
+    plt.legend()
