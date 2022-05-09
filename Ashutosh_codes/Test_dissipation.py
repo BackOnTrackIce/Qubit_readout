@@ -521,23 +521,7 @@ print(parameter_map.print_parameters())
 #%%
 
 exp.write_config("Test_master_eq.hjson")
-
-opt.optimize_controls()
-print(opt.current_best_goal)
-print(parameter_map.print_parameters())
-
 parameter_map.store_values("Test_master_eq_optimized_values_run1.c3log")
 plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False, filename="Test_master_pop_after_opt.png")
 
 plotIQ(exp, sequence, model.ann_opers[1], resonator_frequency, resonator_frequency, spacing=100, usePlotly=False)
-#%%
-opt = OptimalControl(
-    dir_path="./output/",
-    fid_func=fidelities.unitary_infid_set,
-    fid_subspace=["Q", "R"],
-    pmap=parameter_map,
-    algorithm=algorithms.lbfgs,
-    options={"maxfun":250},
-    run_name="Readout_IQ",
-    fid_func_kwargs={"params":fid_params}
-)
