@@ -653,8 +653,7 @@ def calculateExpectationValue(states, Op, lindbladian):
     expect_val = []
     for i in states:
         if lindbladian:
-            state = tf_utils.tf_vec_to_dm(i)
-            expect_val.append(tf.linalg.trace(tf.matmul(Op, state)))
+            expect_val.append(tf.linalg.trace(tf.matmul(i, Op)))
         else:
             expect_val.append(tf.matmul(tf.matmul(tf.transpose(i, conjugate=True), Op),i)[0,0])
     return expect_val
@@ -688,8 +687,7 @@ def plotNumberOperator(
     fig.show()
 
 
-
-def frameOfDrive(exp, psi_list, freq, k):
+def frameOfDrive(exp, psi_list, freq_q, freq_r, spacing):
     """
     Rotates the states to the frame of drive.
 
@@ -716,7 +714,7 @@ def frameOfDrive(exp, psi_list, freq, k):
     aQ_dag = tf.transpose(aQ, conjugate=True)
     NQ = tf.matmul(aQ_dag, aQ)
 
-    ts = exp.ts[::k]
+    ts = exp.ts[::spacing]
     ts = tf.cast(ts, dtype=tf.complex128)
     
     I = tf.eye(len(aR), dtype=tf.complex128)
@@ -724,9 +722,9 @@ def frameOfDrive(exp, psi_list, freq, k):
     psi_rotated = []
     
     for i in range(n):
-        U = tf.linalg.expm(1j*2*np.pi*freq*(NR + NQ)*ts[i])
+        U = tf.linalg.expm(1j*2*np.pi*(freq_r*NR + freq_q*NQ)*ts[i])
         if model.lindbladian:
-            U_dag = tf.linalg.expm(-1j*2*np.pi*freq*(NR + NQ)*ts[i]) # Change this to conjugate transpose
+            U_dag = tf.transpose(U, conjugate=True)
             rho_i = tf_utils.tf_vec_to_dm(psi_list[i])
             psi_rotated.append(tf.matmul(tf.matmul(U_dag, rho_i), U))    ## Check this. Now it is U_dag*rho*U but I think it should be U*rho*U_dag
         else:
@@ -739,7 +737,8 @@ def plotIQ(
         exp: Experiment, 
         sequence: List[str], 
         annihilation_operator: tf.Tensor,
-        frequency: float,
+        drive_freq_q,
+        drive_freq_r,
         spacing=100,
         usePlotly=False
 ):
@@ -754,9 +753,6 @@ def plotIQ(
     sequence: List[str], 
 
     annihilation_operator: tf.Tensor
-
-    frequency: float
-
 
     Returns
     -------
@@ -775,7 +771,7 @@ def plotIQ(
 
     psi_list = calculateState(exp, init_state_0, sequence)
     psi_list = psi_list[::spacing]
-    psi_list_0 =  frameOfDrive(exp, psi_list, frequency, spacing)
+    psi_list_0 =  frameOfDrive(exp, psi_list, drive_freq_q, drive_freq_r, spacing)
     expect_val_0 = calculateExpectationValue(psi_list_0, annihilation_operator, model.lindbladian)
     Q0 = np.real(expect_val_0)
     I0 = np.imag(expect_val_0)
@@ -791,46 +787,34 @@ def plotIQ(
 
     psi_list = calculateState(exp, init_state_1, sequence)
     psi_list = psi_list[::spacing]
-    psi_list_1 =  frameOfDrive(exp, psi_list, frequency, spacing)
+    psi_list_1 =  frameOfDrive(exp, psi_list, drive_freq_q, drive_freq_r, spacing)
     expect_val_1 = calculateExpectationValue(psi_list_1, annihilation_operator, model.lindbladian)
     Q1 = np.real(expect_val_1)
     I1 = np.imag(expect_val_1)
-
 
     ts = exp.ts[::spacing]
     dist = []
     for t in range(len(ts)):
         dist.append(np.sqrt((Q0[t] - Q1[t])**2 + (I0[t] - I1[t])**2))
-
-
+    
     if usePlotly:
         fig = go.Figure()
         fig.add_trace(go.Scatter(x = Q0, y = I0, mode = "lines", name="Ground state"))
         fig.add_trace(go.Scatter(x = Q1, y = I1, mode = "lines", name ="Excited state"))
         fig.show()
-        
-    #fig.write_image("Readout_IQ.png")
+        fig.write_image("Readout_IQ.png")
     else:
         plt.figure(dpi=100)
-        plt.scatter(Q0, I0, label="Ground state")
-        plt.scatter(Q1, I1, label="Excited state")
+        plt.plot(Q0, I0, label="Ground state", linestyle='--', marker='o')
+        plt.plot(Q1, I1, label="Excited state", linestyle='--', marker='o')
         plt.legend()
         plt.show()
-
-
-    final_state_0 = psi_list_0[-1]
-    final_state_1 = psi_list_1[-1]
-    if model.lindbladian:
-        final_state_0 = tf_utils.tf_vec_to_dm(final_state_0)
-        final_state_1 = tf_utils.tf_vec_to_dm(final_state_1)
+        plt.savefig("IQ Plot.png")
     
-    xvec = np.linspace(-10,10,100)
-    yvec = np.linspace(-10,10,100)
-    plotWignerFunction([final_state_0, final_state_1], xvec, yvec)
-
     plt.figure(dpi=100)
     plt.plot(ts, dist)
     plt.show()
+    plt.savefig("Distance plot.png")
 
 
 
