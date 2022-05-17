@@ -1,4 +1,3 @@
-#%%
 import os
 from re import I
 import numpy as np
@@ -31,7 +30,6 @@ from c3.optimizers.optimalcontrol import OptimalControl
 import plotly.graph_objects as go
 from plotting import *
 from utilities_functions import *
-#%%
 
 qubit_levels = 3
 qubit_frequency = 7.86e9
@@ -126,7 +124,6 @@ model = Mdl(
 model.set_lindbladian(False)
 model.set_dressed(False)
 
-#%%
 
 sim_res = 100e9
 awg_res = 2e9
@@ -205,7 +202,7 @@ generator = Gnr(
     )
 
 generator.devices["AWG"].enable_drag_2()
-#%%
+
 
 from qutip import *
 import numpy as np
@@ -370,8 +367,6 @@ swap_gate.add_component(carriers_2[1], "dR2")
 
 gates_arr = [swap_gate]
 
-#%%
-
 parameter_map = PMap(instructions=gates_arr, model=model, generator=generator)
 parameter_map.load_values("best_point.txt")
 exp = Exp(pmap=parameter_map)
@@ -383,10 +378,6 @@ exp.propagate_batch_size = 2000
 
 unitaries = exp.compute_propagators()
 
-#%%
-exp.write_config("FUll_simulation.config")
-
-#%%
 
 init_state_index = model.get_state_indeces([(1,0)])[0]
 psi_init = [[0] * model.tot_dim]
@@ -410,19 +401,19 @@ parameter_map.set_opt_map(opt_map)
 
 opt = OptimalControl(
     dir_path="./output/",
-    fid_func=fidelities.state_transfer_infid_set_full,
+    fid_func=fidelities.unitary_infid_set,
     fid_subspace=["Q", "R"],
     pmap=parameter_map,
     algorithm=algorithms.lbfgs,
     options={"maxfun":1000},
-    run_name="SWAP_20_01_full",
-    fid_func_kwargs={"psi_0":init_state}
+    run_name="SWAP_20_01_full"
 )
 exp.set_opt_gates(["swap[0, 1]"])
 opt.set_exp(exp)
 
-tf.config.run_functions_eagerly(True)
-
 opt.optimize_controls()
 print(opt.current_best_goal)
 print(parameter_map.print_parameters())
+
+
+
