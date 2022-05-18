@@ -1331,7 +1331,7 @@
   }
   options:
   {
-    propagate_batch_size: 1000
+    propagate_batch_size: 100
     use_control_fields: true
     overwrite_propagators: true
     stop_partial_propagator_gradient: true

@@ -444,7 +444,7 @@ exp.set_opt_gates(["swap[0, 1]", 'Readout[1]'])
 
 model.set_FR(False)
 model.set_lindbladian(True)
-exp.propagate_batch_size = 1000
+exp.propagate_batch_size = 100
 
 #%%
 unitaries = exp.compute_propagators()
@@ -584,7 +584,7 @@ opt = OptimalControl(
     run_name="swap_and_readout",
     fid_func_kwargs={"params":fid_params}
 )
-exp.set_opt_gates(["Readout[1]"])
+exp.set_opt_gates(["swap[0, 1]", "Readout[1]"])
 opt.set_exp(exp)
 
 
