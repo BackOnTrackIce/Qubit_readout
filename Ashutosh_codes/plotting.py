@@ -687,7 +687,7 @@ def plotNumberOperator(
     fig.show()
 
 
-def frameOfDrive(exp, psi_list, freq_q, freq_r, spacing):
+def frameOfDrive(exp, psi_list, freq_q, freq_r, spacing, t_total):
     """
     Rotates the states to the frame of drive.
 
@@ -714,7 +714,8 @@ def frameOfDrive(exp, psi_list, freq_q, freq_r, spacing):
     aQ_dag = tf.transpose(aQ, conjugate=True)
     NQ = tf.matmul(aQ_dag, aQ)
 
-    ts = exp.ts[::spacing]
+    #ts = exp.ts[::spacing]
+    ts = tf.linspace(0.0, t_total, n, name="linspace")
     ts = tf.cast(ts, dtype=tf.complex128)
     
     I = tf.eye(len(aR), dtype=tf.complex128)
@@ -739,6 +740,7 @@ def plotIQ(
         annihilation_operator: tf.Tensor,
         drive_freq_q,
         drive_freq_r,
+        t_total,
         spacing=100,
         usePlotly=False
 ):
@@ -771,7 +773,7 @@ def plotIQ(
 
     psi_list = calculateState(exp, init_state_0, sequence)
     psi_list = psi_list[::spacing]
-    psi_list_0 =  frameOfDrive(exp, psi_list, drive_freq_q, drive_freq_r, spacing)
+    psi_list_0 =  frameOfDrive(exp, psi_list, drive_freq_q, drive_freq_r, spacing, t_total)
     expect_val_0 = calculateExpectationValue(psi_list_0, annihilation_operator, model.lindbladian)
     Q0 = np.real(expect_val_0)
     I0 = np.imag(expect_val_0)
@@ -787,12 +789,14 @@ def plotIQ(
 
     psi_list = calculateState(exp, init_state_1, sequence)
     psi_list = psi_list[::spacing]
-    psi_list_1 =  frameOfDrive(exp, psi_list, drive_freq_q, drive_freq_r, spacing)
+    psi_list_1 =  frameOfDrive(exp, psi_list, drive_freq_q, drive_freq_r, spacing, t_total)
     expect_val_1 = calculateExpectationValue(psi_list_1, annihilation_operator, model.lindbladian)
     Q1 = np.real(expect_val_1)
     I1 = np.imag(expect_val_1)
 
-    ts = exp.ts[::spacing]
+
+    n = len(psi_list)
+    ts = tf.linspace(0.0, t_total, n, name="linspace")
     dist = []
     for t in range(len(ts)):
         dist.append(np.sqrt((Q0[t] - Q1[t])**2 + (I0[t] - I1[t])**2))
@@ -813,6 +817,8 @@ def plotIQ(
     
     plt.figure(dpi=100)
     plt.plot(ts, dist)
+    plt.xlabel("Time (in seconds)")
+    plt.ylabel("Distance (in arbitrary units)")
     plt.show()
     plt.savefig("Distance plot.png")
 
