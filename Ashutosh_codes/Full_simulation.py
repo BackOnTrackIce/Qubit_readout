@@ -444,7 +444,7 @@ exp.set_opt_gates(["swap[0, 1]", 'Readout[1]'])
 
 model.set_FR(False)
 model.set_lindbladian(True)
-exp.propagate_batch_size = 100
+exp.propagate_batch_size = 1000
 
 #%%
 unitaries = exp.compute_propagators()
