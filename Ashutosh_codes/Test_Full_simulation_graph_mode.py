@@ -172,32 +172,28 @@ generator = Gnr(
                 "LO": [],
                 "AWG": [],
                 "DigitalToAnalog": ["AWG"],
-                "Response": ["DigitalToAnalog"],
-                "Mixer": ["LO", "Response"],
+                "Mixer": ["LO", "DigitalToAnalog"],
                 "VoltsToHertz": ["Mixer"]
             },
             "dR1":{
                 "LO": [],
                 "AWG": [],
                 "DigitalToAnalog": ["AWG"],
-                "Response": ["DigitalToAnalog"],
-                "Mixer": ["LO", "Response"],
+                "Mixer": ["LO", "DigitalToAnalog"],
                 "VoltsToHertz": ["Mixer"]
             },
             "dQ2":{
                 "LO": [],
                 "AWG": [],
                 "DigitalToAnalog": ["AWG"],
-                "Response": ["DigitalToAnalog"],
-                "Mixer": ["LO", "Response"],
+                "Mixer": ["LO", "DigitalToAnalog"],
                 "VoltsToHertz": ["Mixer"]
             },
             "dR2":{
                 "LO": [],
                 "AWG": [],
                 "DigitalToAnalog": ["AWG"],
-                "Response": ["DigitalToAnalog"],
-                "Mixer": ["LO", "Response"],
+                "Mixer": ["LO", "DigitalToAnalog"],
                 "VoltsToHertz": ["Mixer"]
             }
         }
