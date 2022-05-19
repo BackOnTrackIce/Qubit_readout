@@ -1,0 +1,174 @@
+{
+  opt_map:
+  [
+    [
+      swap[0, 1]-dR1-carrier-freq
+    ]
+    [
+      swap[0, 1]-dR1-swap_pulse-amp
+    ]
+    [
+      swap[0, 1]-dR1-swap_pulse-t_up
+    ]
+    [
+      swap[0, 1]-dR1-swap_pulse-t_down
+    ]
+    [
+      swap[0, 1]-dR1-swap_pulse-risefall
+    ]
+    [
+      swap[0, 1]-dR1-swap_pulse-xy_angle
+    ]
+    [
+      swap[0, 1]-dR1-swap_pulse-freq_offset
+    ]
+    [
+      swap[0, 1]-dR1-swap_pulse-delta
+    ]
+    [
+      swap[0, 1]-dQ1-carrier-freq
+    ]
+    [
+      swap[0, 1]-dQ1-swap_pulse-amp
+    ]
+    [
+      swap[0, 1]-dQ1-swap_pulse-t_up
+    ]
+    [
+      swap[0, 1]-dQ1-swap_pulse-t_down
+    ]
+    [
+      swap[0, 1]-dQ1-swap_pulse-risefall
+    ]
+    [
+      swap[0, 1]-dQ1-swap_pulse-xy_angle
+    ]
+    [
+      swap[0, 1]-dQ1-swap_pulse-freq_offset
+    ]
+    [
+      swap[0, 1]-dQ1-swap_pulse-delta
+    ]
+    [
+      swap[0, 1]-dR2-carrier-freq
+    ]
+    [
+      swap[0, 1]-dR2-swap2_pulse-amp
+    ]
+    [
+      swap[0, 1]-dR2-swap2_pulse-t_up
+    ]
+    [
+      swap[0, 1]-dR2-swap2_pulse-t_down
+    ]
+    [
+      swap[0, 1]-dR2-swap2_pulse-risefall
+    ]
+    [
+      swap[0, 1]-dR2-swap2_pulse-xy_angle
+    ]
+    [
+      swap[0, 1]-dR2-swap2_pulse-freq_offset
+    ]
+    [
+      swap[0, 1]-dR2-swap2_pulse-delta
+    ]
+    [
+      swap[0, 1]-dQ2-carrier-freq
+    ]
+    [
+      swap[0, 1]-dQ2-swap2_pulse-amp
+    ]
+    [
+      swap[0, 1]-dQ2-swap2_pulse-t_up
+    ]
+    [
+      swap[0, 1]-dQ2-swap2_pulse-t_down
+    ]
+    [
+      swap[0, 1]-dQ2-swap2_pulse-risefall
+    ]
+    [
+      swap[0, 1]-dQ2-swap2_pulse-xy_angle
+    ]
+    [
+      swap[0, 1]-dQ2-swap2_pulse-freq_offset
+    ]
+    [
+      swap[0, 1]-dQ2-swap2_pulse-delta
+    ]
+  ]
+  units:
+  [
+    Hz 2pi
+    V
+    s
+    s
+    s
+    rad
+    Hz 2pi
+    ""
+    Hz 2pi
+    V
+    s
+    s
+    s
+    rad
+    Hz 2pi
+    ""
+    Hz 2pi
+    V
+    s
+    s
+    s
+    rad
+    Hz 2pi
+    ""
+    Hz 2pi
+    V
+    s
+    s
+    s
+    rad
+    Hz 2pi
+    ""
+  ]
+  optim_status:
+  {
+    params:
+    [
+      7646943470.423654
+      0.30000000000000027
+      2.0000000000000005e-09
+      9e-09
+      1e-09
+      -4.440892098500626e-16
+      -53000000.0
+      -1.0
+      7646249458.989598
+      0.30000000000000027
+      2.0000000000000005e-09
+      9e-09
+      1e-09
+      -4.440892098500626e-16
+      -53000000.0
+      -1.0
+      9511844098.396692
+      0.9999999999999992
+      1.8999999999999985e-08
+      2.0700000000000015e-07
+      9.999999999999903e-10
+      -4.440892098500626e-16
+      -53000000.0
+      -1.0
+      9512034954.8058
+      0.9999999999999992
+      1.8999999999999985e-08
+      2.0700000000000015e-07
+      9.999999999999903e-10
+      -4.440892098500626e-16
+      -53000000.0
+      -1.0
+    ]
+  }
+}
