@@ -240,8 +240,8 @@ Rswap_pulse = pulse.Envelope(
 
 tlist = np.linspace(0,tswap_10_20, 1000)
 
-drive_freq_qubit = 7650554480.090796
-drive_freq_resonator = 7650554480.090796
+drive_freq_qubit = 7.5e9
+drive_freq_resonator = 7.5e9
 carrier_freq = [drive_freq_qubit, drive_freq_resonator]
 carrier_parameters = {
             "Q":{"freq": Qty(value=carrier_freq[0], min_val=0.0, max_val=10e9, unit="Hz 2pi"),
@@ -298,26 +298,85 @@ plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False)
 
 opt_map = [
     [("swap[0, 1]", "dR1", "carrier", "freq")],
+    [("swap[0, 1]", "dR1", "swap_pulse", "amp")],
+    [("swap[0, 1]", "dR1", "swap_pulse", "t_up")],
+    [("swap[0, 1]", "dR1", "swap_pulse", "t_down")],
+    [("swap[0, 1]", "dR1", "swap_pulse", "risefall")],
+    [("swap[0, 1]", "dR1", "swap_pulse", "xy_angle")],
+    [("swap[0, 1]", "dR1", "swap_pulse", "freq_offset")],
+    [("swap[0, 1]", "dR1", "swap_pulse", "delta")],
     [("swap[0, 1]", "dQ1", "carrier", "freq")],
+    [("swap[0, 1]", "dQ1", "swap_pulse", "amp")],
+    [("swap[0, 1]", "dQ1", "swap_pulse", "t_up")],
+    [("swap[0, 1]", "dQ1", "swap_pulse", "t_down")],
+    [("swap[0, 1]", "dQ1", "swap_pulse", "risefall")],
+    [("swap[0, 1]", "dQ1", "swap_pulse", "xy_angle")],
+    [("swap[0, 1]", "dQ1", "swap_pulse", "freq_offset")],
+    [("swap[0, 1]", "dQ1", "swap_pulse", "delta")],
 ]
 
 
 parameter_map.set_opt_map(opt_map)
 
+psi = [[0] * model.tot_dim]
+ground_state_index = model.get_state_indeces([(0,0)])[0]
+psi[0][ground_state_index] = 1
+ground_state = tf.transpose(tf.constant(psi, tf.complex128))
+if model.lindbladian:
+    ground_state = tf_utils.tf_state_to_dm(ground_state)
+
+
+psi = [[0] * model.tot_dim]
+excited_state_index = model.get_state_indeces([(1,0)])[0]
+psi[0][excited_state_index] = 1
+excited_state = tf.transpose(tf.constant(psi, tf.complex128))
+if model.lindbladian:
+    excited_state = tf_utils.tf_state_to_dm(excited_state)
+
+
+freq_drive = resonator_frequency
+
+aR = tf.convert_to_tensor(model.ann_opers[1], dtype = tf.complex128)
+aQ = tf.convert_to_tensor(model.ann_opers[0], dtype = tf.complex128)
+aR_dag = tf.transpose(aR, conjugate=True)
+NR = tf.matmul(aR_dag,aR)
+aQ_dag = tf.transpose(aQ, conjugate=True)
+NQ = tf.matmul(aQ_dag, aQ)
+
+Urot = tf.linalg.expm(1j*2*np.pi*freq_drive*(NR + NQ)*tswap_10_20)
+U_rot_dag = tf.transpose(Urot, conjugate=True)
+a_rotated = tf.matmul(U_rot_dag, tf.matmul(aR, Urot))
+
+d_max = 1.0
+
+swap_cost = 1.0
+
+psi_0 = excited_state
+
+fid_params = {
+    "ground_state": ground_state,
+    "excited_state": excited_state,
+    "a_rotated": a_rotated,
+    "cutoff_distance": d_max,
+    "lindbladian": model.lindbladian
+}
+
+
+
+
 opt = OptimalControl(
     dir_path="./output/",
-    fid_func=fidelities.state_transfer_infid_set_full,
+    fid_func=fidelities.IQ_plane_distance,
     fid_subspace=["Q", "R"],
     pmap=parameter_map,
     algorithm=algorithms.lbfgs,
     options={"maxfun":200},
     run_name="SWAP_20_01",
-    fid_func_kwargs={"psi_0":init_state}
+    fid_func_kwargs={"params": fid_params}
 )
 exp.set_opt_gates(["swap[0, 1]"])
 opt.set_exp(exp)
 #%%
-
 opt.optimize_controls()
 print(opt.current_best_goal)
 print(parameter_map.print_parameters())
