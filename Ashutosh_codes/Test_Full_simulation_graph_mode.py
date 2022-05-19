@@ -498,10 +498,9 @@ opt.optimize_controls()
 print(opt.current_best_goal)
 print(parameter_map.print_parameters())
 
+
+#%%
 plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False)
 
 t_sequence = t_swap_gate
 plotIQ(exp, sequence, model.ann_opers[1], resonator_frequency, resonator_frequency, t_sequence, spacing=100, usePlotly=False)
-
-
-# %%

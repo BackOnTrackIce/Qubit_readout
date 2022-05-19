@@ -33,7 +33,7 @@ from plotting import *
 from utilities_functions import *
 #%%
 
-qubit_levels = 3
+qubit_levels = 4
 qubit_frequency = 7.86e9
 qubit_anharm = -264e6
 qubit_t1 = 27e-6
@@ -51,7 +51,7 @@ qubit = chip.Qubit(
     temp=Qty(value=qubit_temp,min_val=0.0,max_val=0.12,unit='K')
 )
 
-resonator_levels = 3
+resonator_levels = 5
 resonator_frequency = 6.02e9
 resonator_t1 = 27e-6
 resonator_t2star = 39e-6
@@ -172,32 +172,28 @@ generator = Gnr(
                 "LO": [],
                 "AWG": [],
                 "DigitalToAnalog": ["AWG"],
-                "Response": ["DigitalToAnalog"],
-                "Mixer": ["LO", "Response"],
+                "Mixer": ["LO", "DigitalToAnalog"],
                 "VoltsToHertz": ["Mixer"]
             },
             "dR1":{
                 "LO": [],
                 "AWG": [],
                 "DigitalToAnalog": ["AWG"],
-                "Response": ["DigitalToAnalog"],
-                "Mixer": ["LO", "Response"],
+                "Mixer": ["LO", "DigitalToAnalog"],
                 "VoltsToHertz": ["Mixer"]
             },
             "dQ2":{
                 "LO": [],
                 "AWG": [],
                 "DigitalToAnalog": ["AWG"],
-                "Response": ["DigitalToAnalog"],
-                "Mixer": ["LO", "Response"],
+                "Mixer": ["LO", "DigitalToAnalog"],
                 "VoltsToHertz": ["Mixer"]
             },
             "dR2":{
                 "LO": [],
                 "AWG": [],
                 "DigitalToAnalog": ["AWG"],
-                "Response": ["DigitalToAnalog"],
-                "Mixer": ["LO", "Response"],
+                "Mixer": ["LO", "DigitalToAnalog"],
                 "VoltsToHertz": ["Mixer"]
             }
         }
@@ -589,7 +585,6 @@ opt.set_exp(exp)
 
 
 #%%
-
 tf.config.run_functions_eagerly(True)
 opt.optimize_controls()
 print(opt.current_best_goal)
@@ -603,3 +598,5 @@ plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False,
 t_sequence = t_swap_gate + t_readout
 plotIQ(exp, sequence, model.ann_opers[1], resonator_frequency, resonator_frequency, t_sequence, spacing=100, usePlotly=False)
 
+
+# %%
