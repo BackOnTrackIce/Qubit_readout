@@ -1,0 +1,306 @@
+{
+  opt_map:
+  [
+    [
+      swap[0, 1]-dR1-carrier-freq
+    ]
+    [
+      swap[0, 1]-dR1-swap_pulse-amp
+    ]
+    [
+      swap[0, 1]-dR1-swap_pulse-t_up
+    ]
+    [
+      swap[0, 1]-dR1-swap_pulse-t_down
+    ]
+    [
+      swap[0, 1]-dR1-swap_pulse-risefall
+    ]
+    [
+      swap[0, 1]-dR1-swap_pulse-xy_angle
+    ]
+    [
+      swap[0, 1]-dR1-swap_pulse-freq_offset
+    ]
+    [
+      swap[0, 1]-dR1-swap_pulse-delta
+    ]
+    [
+      swap[0, 1]-dQ1-carrier-freq
+    ]
+    [
+      swap[0, 1]-dQ1-swap_pulse-amp
+    ]
+    [
+      swap[0, 1]-dQ1-swap_pulse-t_up
+    ]
+    [
+      swap[0, 1]-dQ1-swap_pulse-t_down
+    ]
+    [
+      swap[0, 1]-dQ1-swap_pulse-risefall
+    ]
+    [
+      swap[0, 1]-dQ1-swap_pulse-xy_angle
+    ]
+    [
+      swap[0, 1]-dQ1-swap_pulse-freq_offset
+    ]
+    [
+      swap[0, 1]-dQ1-swap_pulse-delta
+    ]
+    [
+      swap[0, 1]-dR2-carrier-freq
+    ]
+    [
+      swap[0, 1]-dR2-swap2_pulse-amp
+    ]
+    [
+      swap[0, 1]-dR2-swap2_pulse-t_up
+    ]
+    [
+      swap[0, 1]-dR2-swap2_pulse-t_down
+    ]
+    [
+      swap[0, 1]-dR2-swap2_pulse-risefall
+    ]
+    [
+      swap[0, 1]-dR2-swap2_pulse-xy_angle
+    ]
+    [
+      swap[0, 1]-dR2-swap2_pulse-freq_offset
+    ]
+    [
+      swap[0, 1]-dR2-swap2_pulse-delta
+    ]
+    [
+      swap[0, 1]-dQ2-carrier-freq
+    ]
+    [
+      swap[0, 1]-dQ2-swap2_pulse-amp
+    ]
+    [
+      swap[0, 1]-dQ2-swap2_pulse-t_up
+    ]
+    [
+      swap[0, 1]-dQ2-swap2_pulse-t_down
+    ]
+    [
+      swap[0, 1]-dQ2-swap2_pulse-risefall
+    ]
+    [
+      swap[0, 1]-dQ2-swap2_pulse-xy_angle
+    ]
+    [
+      swap[0, 1]-dQ2-swap2_pulse-freq_offset
+    ]
+    [
+      swap[0, 1]-dQ2-swap2_pulse-delta
+    ]
+    [
+      Readout[1]-dR1-carrier-freq
+    ]
+    [
+      Readout[1]-dR1-readout-pulse-amp
+    ]
+    [
+      Readout[1]-dR1-readout-pulse-t_up
+    ]
+    [
+      Readout[1]-dR1-readout-pulse-t_down
+    ]
+    [
+      Readout[1]-dR1-readout-pulse-risefall
+    ]
+    [
+      Readout[1]-dR1-readout-pulse-xy_angle
+    ]
+    [
+      Readout[1]-dR1-readout-pulse-freq_offset
+    ]
+    [
+      Readout[1]-dR1-readout-pulse-delta
+    ]
+    [
+      Readout[1]-dQ1-carrier-freq
+    ]
+    [
+      Readout[1]-dQ1-readout-pulse-amp
+    ]
+    [
+      Readout[1]-dQ1-readout-pulse-t_up
+    ]
+    [
+      Readout[1]-dQ1-readout-pulse-t_down
+    ]
+    [
+      Readout[1]-dQ1-readout-pulse-risefall
+    ]
+    [
+      Readout[1]-dQ1-readout-pulse-xy_angle
+    ]
+    [
+      Readout[1]-dQ1-readout-pulse-freq_offset
+    ]
+    [
+      Readout[1]-dQ1-readout-pulse-delta
+    ]
+  ]
+  units:
+  [
+    Hz 2pi
+    V
+    s
+    s
+    s
+    rad
+    Hz 2pi
+    ""
+    Hz 2pi
+    V
+    s
+    s
+    s
+    rad
+    Hz 2pi
+    ""
+    Hz 2pi
+    V
+    s
+    s
+    s
+    rad
+    Hz 2pi
+    ""
+    Hz 2pi
+    V
+    s
+    s
+    s
+    rad
+    Hz 2pi
+    ""
+    Hz 2pi
+    V
+    s
+    s
+    s
+    rad
+    Hz 2pi
+    ""
+    Hz 2pi
+    V
+    s
+    s
+    s
+    rad
+    Hz 2pi
+    ""
+  ]
+  optim_status:
+  {
+    params:
+    [
+      7665845367.190526
+      0.30361348929931586
+      1.9972991306178024e-09
+      9.003199484731164e-09
+      1.0027824602586835e-09
+      -0.00073754842873619
+      -52999997.220960945
+      -0.9993466545638325
+      7648253203.862535
+      0.3056439280424067
+      1.9608575393672196e-09
+      9.043376742653386e-09
+      1.0462610832347995e-09
+      -0.01035714224645079
+      -52999995.01509874
+      -0.9850166085889649
+      9515063428.170929
+      0.9989503775242797
+      1.8800871029069108e-08
+      2.0773329238682044e-07
+      2.0967267036632655e-09
+      0.0001801572646882299
+      -53000000.34533229
+      -0.9997139381249953
+      9512318517.689016
+      1.0235178344937368
+      1.5522088054575143e-08
+      2.0827361825762692e-07
+      1.5418253106230147e-09
+      0.009005182602545014
+      -53000007.57503844
+      -0.999067620122001
+      6054866877.35583
+      0.0712722641407787
+      3.1819603215955336e-09
+      4.874615868887938e-08
+      9.63467138945801e-10
+      -3.141592653820281
+      -53000004.681306556
+      -1.0085293603701082
+      6070000000.004072
+      -2.0961898883342656e-10
+      1.999999999999999e-09
+      4.8e-08
+      1e-09
+      -4.440892098500626e-16
+      -53000000.0
+      -1.0
+    ]
+    gradient:
+    [
+      0.054156425790683776
+      0.0005189633288920461
+      0.0036163907751591727
+      -0.0011807383220463034
+      -0.0031997440187496017
+      -0.00025821166185371647
+      2.1690668987700022e-05
+      -0.0015555855111895115
+      -0.13112648935468385
+      -0.008354721993076308
+      0.03536953943023974
+      -0.026893562060299647
+      -0.045235657370520925
+      -0.022108647364457217
+      -4.861093477265519e-05
+      -0.015708268471665773
+      0.29972640044176996
+      -0.007716276913322686
+      -0.0017974912625786487
+      -0.019294914956558912
+      -0.00970802112461474
+      -0.0044726269399521295
+      0.00011895843238971352
+      -0.0012677045551406053
+      -0.18312409529179463
+      0.7756537345971132
+      -0.14948983364497573
+      0.06259196408909357
+      -0.02528059208010809
+      0.02581741201280987
+      -6.746867845242325e-05
+      -8.980970573755819e-05
+      -0.022449246510174988
+      -0.17759130408139576
+      -0.13332646932983508
+      -0.05805105182669305
+      0.013985778811263207
+      null
+      -9.958754698455526e-06
+      0.006485880816678867
+      0.0
+      null
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+    ]
+    goal: 0.41609342902491797
+  }
+}
