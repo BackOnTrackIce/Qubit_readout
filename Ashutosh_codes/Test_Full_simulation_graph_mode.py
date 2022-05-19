@@ -366,11 +366,76 @@ swap_gate.add_component(carriers_2[1], "dR2")
 
 gates_arr = [swap_gate]
 
+Delta_1 = qubit_frequency - resonator_frequency
+Delta_2 = (2 + qubit_anharm)*qubit_frequency
+chi_0 = (coupling_strength**2)/Delta_1
+chi_1 = (coupling_strength**2)/(Delta_2 - Delta_1)
+
+carriers = createCarriers([resonator_frequency+sideband - chi_1/2, resonator_frequency+sideband - chi_1/2], sideband)
+
+t_readout = 50e-9
+t_total = 50e-9
+
+
+readout_params = {
+    "amp": Qty(value=2*np.pi*0.01,min_val=0.0,max_val=10.0,unit="V"),
+    "t_up": Qty(value=2e-9, min_val=0.0, max_val=t_readout, unit="s"),
+    "t_down": Qty(value=t_readout-2.0e-9, min_val=0.0, max_val=t_readout, unit="s"),
+    "risefall": Qty(value=1.0e-9, min_val=0.1e-9, max_val=t_readout/2, unit="s"),
+    "xy_angle": Qty(value=np.pi,min_val=-0.5 * np.pi,max_val=2.5 * np.pi,unit="rad"),
+    "freq_offset": Qty(value=-sideband - 3e6,min_val=-56 * 1e6,max_val=-52 * 1e6,unit="Hz 2pi"),
+    "delta": Qty(value=-1,min_val=-5,max_val=3,unit=""),
+    "t_final": Qty(value=t_total,min_val=0.1*t_total,max_val=1.5*t_total,unit="s")
+}
+
+readout_pulse = pulse.Envelope(
+    name="readout-pulse",
+    desc="Flattop pluse for SWAP gate",
+    params=readout_params,
+    shape=envelopes.flattop
+)
+
+
+tlist = np.linspace(0,t_total, 1000)
+plotSignal(tlist, readout_pulse.shape(tlist, readout_pulse.params).numpy())
+
+nodrive_pulse = pulse.Envelope(
+    name="no_drive", 
+    params={
+        "t_final": Qty(
+            value=t_total,
+            min_val=0.5 * t_total,
+            max_val=1.5 * t_total,
+            unit="s"
+        )
+    },
+    shape=envelopes.no_drive
+)
+
+qubit_pulse = copy.deepcopy(readout_pulse)
+qubit_pulse.params["amp"] = Qty(value=2*np.pi*0,min_val=0.0,max_val=10.0,unit="V")
+qubit_pulse.params["xy_angle"] = Qty(value=0,min_val=-0.5 * np.pi,max_val=2.5 * np.pi,unit="rad")
+resonator_pulse = copy.deepcopy(readout_pulse)
+resonator_pulse.params["amp"] = Qty(value=2*np.pi*0.01,min_val=0.0,max_val=10.0,unit="V")
+resonator_pulse.params["xy_angle"] = Qty(value=-np.pi,min_val=-np.pi,max_val=2.5 * np.pi,unit="rad")
+
+Readout_gate = gates.Instruction(
+    name="Readout", targets=[1], t_start=0.0, t_end=t_total, channels=["dQ1", "dR1"]
+)
+Readout_gate.add_component(qubit_pulse, "dQ1")
+Readout_gate.add_component(copy.deepcopy(carriers[0]), "dQ1")
+Readout_gate.add_component(resonator_pulse, "dR1")
+Readout_gate.add_component(copy.deepcopy(carriers[1]), "dR1")
+
+gates_arr.append(Readout_gate)
+
 #%%
+
 parameter_map = PMap(instructions=gates_arr, model=model, generator=generator)
 exp = Exp(pmap=parameter_map)
-exp.set_opt_gates(["swap[0, 1]"])
+exp.set_opt_gates(["swap[0, 1]", 'Readout[1]'])
 #%%
+
 model.set_FR(False)
 model.set_lindbladian(True)
 exp.propagate_batch_size = 1000
@@ -378,6 +443,7 @@ exp.propagate_batch_size = 1000
 #%%
 unitaries = exp.compute_propagators()
 print(unitaries)
+
 #%%
 
 print("Plotting dynamics before optimization ... ")
@@ -388,10 +454,10 @@ psi_init[0][init_state_index] = 1
 init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
-sequence = ["swap[0, 1]"]
+sequence = ["swap[0, 1]", 'Readout[1]']
 plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False)
 
-t_sequence = t_swap_gate
+t_sequence = t_swap_gate + t_readout
 plotIQ(exp, sequence, model.ann_opers[1], resonator_frequency, resonator_frequency, t_sequence, spacing=100, usePlotly=False)
 #%%
 
@@ -430,6 +496,22 @@ parameter_map.set_opt_map([
     [("swap[0, 1]", "dQ2", "swap2_pulse", "xy_angle")],
     [("swap[0, 1]", "dQ2", "swap2_pulse", "freq_offset")],
     [("swap[0, 1]", "dQ2", "swap2_pulse", "delta")],
+    [("Readout[1]", "dR1", "carrier", "freq")],
+    [("Readout[1]", "dR1", "readout-pulse", "amp")],
+    [("Readout[1]", "dR1", "readout-pulse", "t_up")],
+    [("Readout[1]", "dR1", "readout-pulse", "t_down")],
+    [("Readout[1]", "dR1", "readout-pulse", "risefall")],
+    [("Readout[1]", "dR1", "readout-pulse", "xy_angle")],
+    [("Readout[1]", "dR1", "readout-pulse", "freq_offset")],
+    [("Readout[1]", "dR1", "readout-pulse", "delta")],
+    [("Readout[1]", "dQ1", "carrier", "freq")],
+    [("Readout[1]", "dQ1", "readout-pulse", "amp")],
+    [("Readout[1]", "dQ1", "readout-pulse", "t_up")],
+    [("Readout[1]", "dQ1", "readout-pulse", "t_down")],
+    [("Readout[1]", "dQ1", "readout-pulse", "risefall")],
+    [("Readout[1]", "dQ1", "readout-pulse", "xy_angle")],
+    [("Readout[1]", "dQ1", "readout-pulse", "freq_offset")],
+    [("Readout[1]", "dQ1", "readout-pulse", "delta")],
 ])
 
 parameter_map.print_parameters()
@@ -460,8 +542,6 @@ NR = tf.matmul(aR_dag,aR)
 aQ_dag = tf.transpose(aQ, conjugate=True)
 NQ = tf.matmul(aQ_dag, aQ)
 
-
-t_total = t_swap_gate
 Urot = tf.linalg.expm(1j*2*np.pi*freq_drive*(NR + NQ)*t_total)
 U_rot_dag = tf.transpose(Urot, conjugate=True)
 a_rotated = tf.matmul(U_rot_dag, tf.matmul(aR, Urot))
@@ -473,14 +553,19 @@ swap_cost = 1.0
 psi_0 = excited_state
 
 fid_params = {
-    "psi0": psi_0,
+    "ground_state": ground_state,
+    "excited_state": excited_state,
+    "a_rotated": a_rotated,
+    "cutoff_distance": d_max,
+    "psi_0": psi_0,
+    "swap_cost": swap_cost,
     "lindbladian": model.lindbladian
 }
 
 #%%
 opt = OptimalControl(
     dir_path="./output/",
-    fid_func=fidelities.state_transfer_infid_set_full,
+    fid_func=fidelities.swap_and_readout,
     fid_subspace=["Q", "R"],
     pmap=parameter_map,
     algorithm=algorithms.lbfgs,
@@ -488,19 +573,23 @@ opt = OptimalControl(
     run_name="swap_and_readout",
     fid_func_kwargs={"params":fid_params}
 )
-exp.set_opt_gates(["swap[0, 1]"])
+exp.set_opt_gates(["swap[0, 1]", "Readout[1]"])
 opt.set_exp(exp)
 
 
 #%%
-
+tf.config.run_functions_eagerly(True)
 opt.optimize_controls()
 print(opt.current_best_goal)
 print(parameter_map.print_parameters())
 
+parameter_map.store_values("Full_simulation_pmap_after_opt.c3log")
 
-#%%
+
 plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False)
 
-t_sequence = t_swap_gate
+t_sequence = t_swap_gate + t_readout
 plotIQ(exp, sequence, model.ann_opers[1], resonator_frequency, resonator_frequency, t_sequence, spacing=100, usePlotly=False)
+
+
+# %%
