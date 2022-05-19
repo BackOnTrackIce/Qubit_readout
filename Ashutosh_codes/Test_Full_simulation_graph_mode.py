@@ -58,7 +58,7 @@ resonator_t2star = 39e-6
 resonator_temp = 50e-3
 
 parameters_resonator = {
-    "freq": Qty(value=resonator_frequency,min_val=0e9 ,max_val=8e9 ,unit='Hz 2pi'),
+    "freq": Qty(value=resonator_frequency,min_val=1e9 ,max_val=8e9 ,unit='Hz 2pi'),
     "t1": Qty(value=resonator_t1,min_val=1e-6,max_val=90e-6,unit='s'),
     "t2star": Qty(value=resonator_t2star,min_val=10e-6,max_val=90e-3,unit='s'),
     "temp": Qty(value=resonator_temp,min_val=0.0,max_val=0.12,unit='K')
@@ -70,6 +70,7 @@ resonator = chip.Resonator(
     hilbert_dim=resonator_levels,
     params=parameters_resonator
 )
+
 
 coupling_strength = 130e6
 qr_coupling = chip.Coupling(
@@ -102,7 +103,6 @@ drive_qubit_2 = chip.Drive(
     hamiltonian_func=hamiltonians.x_drive
 )
 
-
 drive_resonator_1 = chip.Drive(
     name="dR1",
     desc="Resonator Drive 1",
@@ -121,83 +121,61 @@ drive_resonator_2 = chip.Drive(
 
 model = Mdl(
     [qubit, resonator], # Individual, self-contained components
-    [drive_qubit_1, drive_qubit_2, drive_resonator_1, drive_resonator_2, qr_coupling]  # Interactions between components
+    [drive_qubit_1, drive_resonator_1, drive_qubit_2, drive_resonator_2, qr_coupling]  # Interactions between components
 )
 model.set_lindbladian(False)
-model.set_dressed(False)
+model.set_dressed(True)
 
-#%%
 
 sim_res = 100e9
 awg_res = 2e9
 v2hz = 1e9
 
+lo = devices.LO(name='lo', resolution=sim_res)
+awg = devices.AWG(name='awg', resolution=awg_res)
+mixer = devices.Mixer(name='mixer')
+dig_to_an = devices.DigitalToAnalog(name="dac", resolution=sim_res)
+v_to_hz = devices.VoltsToHertz(
+    name='v_to_hz',
+    V_to_Hz=Qty(value=v2hz, min_val=0.9e9, max_val=1.1e9, unit='Hz/V')
+)
+
+
 generator = Gnr(
         devices={
-            "LO": devices.LO(name='lo', resolution=sim_res, outputs=1),
-            "AWG": devices.AWG(name='awg', resolution=awg_res, outputs=1),
-            "DigitalToAnalog": devices.DigitalToAnalog(
-                name="dac",
-                resolution=sim_res,
-                inputs=1,
-                outputs=1
-            ),
-            "Response": devices.Response(
-                name='resp',
-                rise_time=Qty(
-                    value=0.3e-9,
-                    min_val=0.05e-9,
-                    max_val=0.6e-9,
-                    unit='s'
-                ),
-                resolution=sim_res,
-                inputs=1,
-                outputs=1
-            ),
-            "Mixer": devices.Mixer(name='mixer', inputs=2, outputs=1),
-            "VoltsToHertz": devices.VoltsToHertz(
-                name='v_to_hz',
-                V_to_Hz=Qty(
-                    value=1e9,
-                    min_val=0.9e9,
-                    max_val=1.1e9,
-                    unit='Hz/V'
-                ),
-                inputs=1,
-                outputs=1
-            )
+            "LO": lo,
+            "AWG": awg,
+            "DigitalToAnalog": dig_to_an,
+            "Mixer": mixer,
+            "VoltsToHertz": v_to_hz
         },
         chains= {
             "dQ1":{
                 "LO": [],
                 "AWG": [],
                 "DigitalToAnalog": ["AWG"],
-                "Response": ["DigitalToAnalog"],
-                "Mixer": ["LO", "Response"],
+                "Mixer": ["LO", "DigitalToAnalog"],
                 "VoltsToHertz": ["Mixer"]
             },
             "dR1":{
                 "LO": [],
                 "AWG": [],
                 "DigitalToAnalog": ["AWG"],
-                "Response": ["DigitalToAnalog"],
-                "Mixer": ["LO", "Response"],
+                "Mixer": ["LO", "DigitalToAnalog"],
                 "VoltsToHertz": ["Mixer"]
             },
             "dQ2":{
                 "LO": [],
                 "AWG": [],
                 "DigitalToAnalog": ["AWG"],
-                "Response": ["DigitalToAnalog"],
-                "Mixer": ["LO", "Response"],
+                "Mixer": ["LO", "DigitalToAnalog"],
                 "VoltsToHertz": ["Mixer"]
             },
             "dR2":{
                 "LO": [],
                 "AWG": [],
                 "DigitalToAnalog": ["AWG"],
-                "Response": ["DigitalToAnalog"],
-                "Mixer": ["LO", "Response"],
+                "Mixer": ["LO", "DigitalToAnalog"],
                 "VoltsToHertz": ["Mixer"]
             }
         }
@@ -216,11 +194,8 @@ Ideal_gate = np.array(tensor(qeye(Nq), qeye(Nr)) + tensor(basis(Nq,1),basis(Nr,0
 np.savetxt("ideal_gate.csv", Ideal_gate, delimiter=",")
 
 
-t_swap_gate = 209e-9
 sideband = 50e6
-
 tswap_10_20 = 11e-9
-tswap_20_01 = 190e-9
 
 
 Qswap_params = {
@@ -231,19 +206,7 @@ Qswap_params = {
     "xy_angle": Qty(value=0.0,min_val=-0.5 * np.pi,max_val=2.5 * np.pi,unit="rad"),
     "freq_offset": Qty(value=-sideband - 3e6,min_val=-56 * 1e6,max_val=-52 * 1e6,unit="Hz 2pi"),
     "delta": Qty(value=-1,min_val=-5,max_val=3,unit=""),
-    "t_final": Qty(value=t_swap_gate,min_val=0.1*t_swap_gate,max_val=1.5*t_swap_gate,unit="s")
-}
-
-
-Qswap2_params = {
-    "amp": Qty(value=1.0,min_val=0.0,max_val=10.0,unit="V"),
-    "t_up": Qty(value=t_swap_gate - tswap_20_01, min_val=0.0, max_val=tswap_20_01, unit="s"),
-    "t_down": Qty(value=t_swap_gate-2.0e-9, min_val=0.0, max_val=t_swap_gate, unit="s"),
-    "risefall": Qty(value=1.0e-9, min_val=0.1e-9, max_val=t_swap_gate/2, unit="s"),
-    "xy_angle": Qty(value=0.0,min_val=-0.5 * np.pi,max_val=2.5 * np.pi,unit="rad"),
-    "freq_offset": Qty(value=-sideband - 3e6,min_val=-56 * 1e6,max_val=-52 * 1e6,unit="Hz 2pi"),
-    "delta": Qty(value=-1,min_val=-5,max_val=3,unit=""),
-    "t_final": Qty(value=t_swap_gate,min_val=0.1*t_swap_gate,max_val=1.5*t_swap_gate,unit="s")
+    "t_final": Qty(value=tswap_10_20,min_val=0.1*tswap_10_20,max_val=1.5*tswap_10_20,unit="s")
 }
 
 Qswap_pulse = pulse.Envelope(
@@ -253,12 +216,6 @@ Qswap_pulse = pulse.Envelope(
     shape=envelopes.flattop
 )
 
-Qswap2_pulse = pulse.Envelope(
-    name="swap2_pulse",
-    desc="Flattop pluse for SWAP gate",
-    params=Qswap2_params,
-    shape=envelopes.flattop
-)
 
 Rswap_params = {
     "amp": Qty(value=0.3,min_val=0.0,max_val=10.0,unit="V"),
@@ -268,19 +225,7 @@ Rswap_params = {
     "xy_angle": Qty(value=0.0,min_val=-0.5 * np.pi,max_val=2.5 * np.pi,unit="rad"),
     "freq_offset": Qty(value=-sideband - 3e6,min_val=-56 * 1e6,max_val=-52 * 1e6,unit="Hz 2pi"),
     "delta": Qty(value=-1,min_val=-5,max_val=3,unit=""),
-    "t_final": Qty(value=t_swap_gate,min_val=0.1*t_swap_gate,max_val=1.5*t_swap_gate,unit="s")
-}
-
-
-Rswap2_params = {
-    "amp": Qty(value=1.0,min_val=0.0,max_val=10.0,unit="V"),
-    "t_up": Qty(value=t_swap_gate - tswap_20_01, min_val=0.0, max_val=tswap_20_01, unit="s"),
-    "t_down": Qty(value=t_swap_gate-2.0e-9, min_val=0.0, max_val=t_swap_gate, unit="s"),
-    "risefall": Qty(value=1.0e-9, min_val=0.1e-9, max_val=t_swap_gate/2, unit="s"),
-    "xy_angle": Qty(value=0.0,min_val=-0.5 * np.pi,max_val=2.5 * np.pi,unit="rad"),
-    "freq_offset": Qty(value=-sideband - 3e6,min_val=-56 * 1e6,max_val=-52 * 1e6,unit="Hz 2pi"),
-    "delta": Qty(value=-1,min_val=-5,max_val=3,unit=""),
-    "t_final": Qty(value=t_swap_gate,min_val=0.1*t_swap_gate,max_val=1.5*t_swap_gate,unit="s")
+    "t_final": Qty(value=tswap_10_20,min_val=0.1*tswap_10_20,max_val=1.5*tswap_10_20,unit="s")
 }
 
 
@@ -291,29 +236,9 @@ Rswap_pulse = pulse.Envelope(
     shape=envelopes.flattop
 )
 
-Rswap2_pulse = pulse.Envelope(
-    name="swap2_pulse",
-    desc="Flattop pluse for SWAP gate",
-    params=Rswap2_params,
-    shape=envelopes.flattop
-)
 
 
-nodrive_pulse = pulse.Envelope(
-    name="no_drive",
-    params={
-        "t_final": Qty(
-            value=t_swap_gate,
-            min_val=0.5 * t_swap_gate,
-            max_val=1.5 * t_swap_gate,
-            unit="s"
-        )
-    },
-    shape=envelopes.no_drive
-)
-
-
-tlist = np.linspace(0,t_swap_gate, 1000)
+tlist = np.linspace(0,tswap_10_20, 1000)
 
 drive_freq_qubit = 7650554480.090796
 drive_freq_resonator = 7650554480.090796
@@ -331,25 +256,10 @@ carriers = [
 ]
 
 
-drive_freq_qubit = 9.5125e9
-drive_freq_resonator = 9.5125e9
-carrier_freq = [drive_freq_qubit, drive_freq_resonator]
-carrier_parameters = {
-            "Q":{"freq": Qty(value=carrier_freq[0], min_val=0.0, max_val=10e9, unit="Hz 2pi"),
-            "framechange": Qty(value=0.0, min_val=-np.pi, max_val=3 * np.pi, unit="rad")},
-            "R": {"freq": Qty(value=carrier_freq[1], min_val=0.0, max_val=10e9, unit="Hz 2pi"),
-            "framechange": Qty(value=0.0, min_val=-np.pi, max_val=3 * np.pi, unit="rad")}
-            }
-
-carriers_2 = [
-    pulse.Carrier(name="carrier", desc="Frequency of the local oscillator", params=carrier_parameters["Q"]),
-    pulse.Carrier(name="carrier", desc="Frequency of the local oscillator", params=carrier_parameters["R"])
-]
-
 ideal_gate = np.loadtxt("ideal_gate.csv", delimiter=",", dtype=np.complex128)
 
 swap_gate = gates.Instruction(
-    name="swap", targets=[0, 1], t_start=0.0, t_end=t_swap_gate, channels=["dQ1", "dR1", "dQ2", "dR2"],
+    name="swap", targets=[0, 1], t_start=0.0, t_end=tswap_10_20, channels=["dQ1", "dR1"],
     ideal = ideal_gate
 )
 
@@ -358,30 +268,22 @@ swap_gate.set_ideal(ideal_gate)
 swap_gate.add_component(Qswap_pulse, "dQ1")
 swap_gate.add_component(carriers[0], "dQ1")
 
-swap_gate.add_component(Qswap2_pulse, "dQ2")
-swap_gate.add_component(carriers_2[0], "dQ2")
-
 swap_gate.add_component(Rswap_pulse, "dR1")
 swap_gate.add_component(carriers[1], "dR1")
 
-swap_gate.add_component(Rswap2_pulse, "dR2")
-swap_gate.add_component(carriers_2[1], "dR2")
-
-
 gates_arr = [swap_gate]
 
-
+#%%
 parameter_map = PMap(instructions=gates_arr, model=model, generator=generator)
 exp = Exp(pmap=parameter_map)
+exp.set_opt_gates(['swap[0, 1]'])
+exp.write_config("Test_swap.hjson")
+model.set_lindbladian(True)
 
-#%%
-
-model.set_FR(False)
-model.set_lindbladian(False)
+#exp.propagate_batch_size = 2000
 
 #%%
 unitaries = exp.compute_propagators()
-print(unitaries)
 
 #%%
 init_state_index = model.get_state_indeces([(1,0)])[0]
@@ -392,5 +294,57 @@ if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
 sequence = ['swap[0, 1]']
 plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False)
+#%%
+
+opt_map = [
+    [("swap[0, 1]", "dR1", "carrier", "freq")],
+    [("swap[0, 1]", "dQ1", "carrier", "freq")],
+]
+
+
+parameter_map.set_opt_map(opt_map)
+
+opt = OptimalControl(
+    dir_path="./output/",
+    fid_func=fidelities.state_transfer_infid_set_full,
+    fid_subspace=["Q", "R"],
+    pmap=parameter_map,
+    algorithm=algorithms.lbfgs,
+    options={"maxfun":200},
+    run_name="SWAP_20_01",
+    fid_func_kwargs={"psi_0":init_state}
+)
+exp.set_opt_gates(["swap[0, 1]"])
+opt.set_exp(exp)
+#%%
+
+opt.optimize_controls()
+print(opt.current_best_goal)
+print(parameter_map.print_parameters())
 
 #%%
+exp.write_config("Test_swap.hjson")
+parameter_map.store_values("Test_swap_values.c3log")
+# %%
+
+exp = Exp()
+exp.read_config("Test_swap.hjson")
+pmap = exp.pmap
+model = pmap.model
+pmap.load_values("Test_swap_values.c3log")
+
+exp.set_opt_gates(['swap[0, 1]'])
+unitaries = exp.compute_propagators()
+
+init_state_index = model.get_state_indeces([(1,0)])[0]
+psi_init = [[0] * model.tot_dim]
+psi_init[0][init_state_index] = 1
+init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
+sequence = ['swap[0, 1]']
+
+states_to_plot = [(0,1), (1,0), (0,2), (2,0), (1,1)]
+plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, states_to_plot=states_to_plot, usePlotly=False, filename="Test_swap.png")
+
+
+
+# %%

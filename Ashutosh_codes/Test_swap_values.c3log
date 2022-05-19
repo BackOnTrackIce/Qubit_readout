@@ -1,0 +1,34 @@
+{
+  opt_map:
+  [
+    [
+      swap[0, 1]-dR1-carrier-freq
+    ]
+    [
+      swap[0, 1]-dQ1-carrier-freq
+    ]
+    [
+      swap[0, 1]-dR2-carrier-freq
+    ]
+    [
+      swap[0, 1]-dQ2-carrier-freq
+    ]
+  ]
+  units:
+  [
+    Hz 2pi
+    Hz 2pi
+    Hz 2pi
+    Hz 2pi
+  ]
+  optim_status:
+  {
+    params:
+    [
+      7646943470.423654
+      7646249458.989598
+      9511844098.396688
+      9512034954.805803
+    ]
+  }
+}

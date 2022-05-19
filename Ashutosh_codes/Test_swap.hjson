@@ -289,19 +289,9 @@
           swap_pulse: {}
           carrier: {}
         }
-        dQ2:
-        {
-          swap2_pulse: {}
-          carrier: {}
-        }
-        dR2:
-        {
-          swap2_pulse: {}
-          carrier: {}
-        }
       }
       fixed_t_end: true
-      gate_length: 2.09e-07
+      gate_length: 1.1e-08
       drive_channels:
       {
         dQ1:
@@ -355,9 +345,9 @@
               }
               t_final:
               {
-                value: 2.09e-07
-                min_val: 2.0900000000000002e-08
-                max_val: 3.135e-07
+                value: 1.1e-08
+                min_val: 1.1e-09
+                max_val: 1.65e-08
                 unit: s
                 symbol: \alpha
               }
@@ -464,9 +454,9 @@
               }
               t_final:
               {
-                value: 2.09e-07
-                min_val: 2.0900000000000002e-08
-                max_val: 3.135e-07
+                value: 1.1e-08
+                min_val: 1.1e-09
+                max_val: 1.65e-08
                 unit: s
                 symbol: \alpha
               }
@@ -507,478 +497,6 @@
                 value: 7650554480.090796
                 min_val: 0.0
                 max_val: 10000000000.0
-                unit: Hz 2pi
-                symbol: \alpha
-              }
-              framechange:
-              {
-                value: 0.0
-                min_val: -3.141592653589793
-                max_val: 9.42477796076938
-                unit: rad
-                symbol: \alpha
-              }
-            }
-            name: carrier
-          }
-        }
-        dQ2:
-        {
-          swap2_pulse:
-          {
-            name: swap2_pulse
-            c3type: Envelope
-            shape: flattop
-            params:
-            {
-              amp:
-              {
-                value: 0.9999999999999998
-                min_val: 0.0
-                max_val: 10.0
-                unit: V
-                symbol: \alpha
-              }
-              delta:
-              {
-                value: -1.0
-                min_val: -5.0
-                max_val: 3.0
-                unit: ""
-                symbol: \alpha
-              }
-              freq_offset:
-              {
-                value: -53000000.0
-                min_val: -56000000.0
-                max_val: -52000000.0
-                unit: Hz 2pi
-                symbol: \alpha
-              }
-              xy_angle:
-              {
-                value: -4.440892098500626e-16
-                min_val: -1.5707963267948966
-                max_val: 7.853981633974483
-                unit: rad
-                symbol: \alpha
-              }
-              sigma:
-              {
-                value: 4.999999969612645e-09
-                min_val: -2.0
-                max_val: 2.0
-                unit: s
-                symbol: \alpha
-              }
-              t_final:
-              {
-                value: 2.09e-07
-                min_val: 2.0900000000000002e-08
-                max_val: 3.135e-07
-                unit: s
-                symbol: \alpha
-              }
-              t_up:
-              {
-                value: 1.8999999999999998e-08
-                min_val: 0.0
-                max_val: 1.9e-07
-                unit: s
-                symbol: \alpha
-              }
-              t_down:
-              {
-                value: 2.0700000000000001e-07
-                min_val: 0.0
-                max_val: 2.09e-07
-                unit: s
-                symbol: \alpha
-              }
-              risefall:
-              {
-                value: 1.000000000000002e-09
-                min_val: 1e-10
-                max_val: 1.045e-07
-                unit: s
-                symbol: \alpha
-              }
-            }
-            drag: false
-          }
-          carrier:
-          {
-            c3type: Carrier
-            params:
-            {
-              freq:
-              {
-                value: 9512500000.0
-                min_val: 0.0
-                max_val: 10000000000.0
-                unit: Hz 2pi
-                symbol: \alpha
-              }
-              framechange:
-              {
-                value: 0.0
-                min_val: -3.141592653589793
-                max_val: 9.42477796076938
-                unit: rad
-                symbol: \alpha
-              }
-            }
-            name: carrier
-          }
-        }
-        dR2:
-        {
-          swap2_pulse:
-          {
-            name: swap2_pulse
-            c3type: Envelope
-            shape: flattop
-            params:
-            {
-              amp:
-              {
-                value: 0.9999999999999998
-                min_val: 0.0
-                max_val: 10.0
-                unit: V
-                symbol: \alpha
-              }
-              delta:
-              {
-                value: -1.0
-                min_val: -5.0
-                max_val: 3.0
-                unit: ""
-                symbol: \alpha
-              }
-              freq_offset:
-              {
-                value: -53000000.0
-                min_val: -56000000.0
-                max_val: -52000000.0
-                unit: Hz 2pi
-                symbol: \alpha
-              }
-              xy_angle:
-              {
-                value: -4.440892098500626e-16
-                min_val: -1.5707963267948966
-                max_val: 7.853981633974483
-                unit: rad
-                symbol: \alpha
-              }
-              sigma:
-              {
-                value: 4.999999969612645e-09
-                min_val: -2.0
-                max_val: 2.0
-                unit: s
-                symbol: \alpha
-              }
-              t_final:
-              {
-                value: 2.09e-07
-                min_val: 2.0900000000000002e-08
-                max_val: 3.135e-07
-                unit: s
-                symbol: \alpha
-              }
-              t_up:
-              {
-                value: 1.8999999999999998e-08
-                min_val: 0.0
-                max_val: 1.9e-07
-                unit: s
-                symbol: \alpha
-              }
-              t_down:
-              {
-                value: 2.0700000000000001e-07
-                min_val: 0.0
-                max_val: 2.09e-07
-                unit: s
-                symbol: \alpha
-              }
-              risefall:
-              {
-                value: 1.000000000000002e-09
-                min_val: 1e-10
-                max_val: 1.045e-07
-                unit: s
-                symbol: \alpha
-              }
-            }
-            drag: false
-          }
-          carrier:
-          {
-            c3type: Carrier
-            params:
-            {
-              freq:
-              {
-                value: 9512500000.0
-                min_val: 0.0
-                max_val: 10000000000.0
-                unit: Hz 2pi
-                symbol: \alpha
-              }
-              framechange:
-              {
-                value: 0.0
-                min_val: -3.141592653589793
-                max_val: 9.42477796076938
-                unit: rad
-                symbol: \alpha
-              }
-            }
-            name: carrier
-          }
-        }
-      }
-    }
-    "Readout[1]":
-    {
-      name: Readout
-      ideal:
-      {
-        __array__:
-        [
-          [
-            1.0
-          ]
-        ]
-      }
-      targets:
-      [
-        1
-      ]
-      params: {}
-      _options:
-      {
-        dQ1:
-        {
-          readout-pulse: {}
-          carrier: {}
-        }
-        dR1:
-        {
-          readout-pulse: {}
-          carrier: {}
-        }
-      }
-      fixed_t_end: true
-      gate_length: 5e-08
-      drive_channels:
-      {
-        dQ1:
-        {
-          readout-pulse:
-          {
-            name: readout-pulse
-            c3type: Envelope
-            shape: flattop
-            params:
-            {
-              amp:
-              {
-                value: 0.0
-                min_val: 0.0
-                max_val: 10.0
-                unit: V
-                symbol: \alpha
-              }
-              delta:
-              {
-                value: -1.0
-                min_val: -5.0
-                max_val: 3.0
-                unit: ""
-                symbol: \alpha
-              }
-              freq_offset:
-              {
-                value: -53000000.0
-                min_val: -56000000.0
-                max_val: -52000000.0
-                unit: Hz 2pi
-                symbol: \alpha
-              }
-              xy_angle:
-              {
-                value: -4.440892098500626e-16
-                min_val: -1.5707963267948966
-                max_val: 7.853981633974483
-                unit: rad
-                symbol: \alpha
-              }
-              sigma:
-              {
-                value: 4.999999969612645e-09
-                min_val: -2.0
-                max_val: 2.0
-                unit: s
-                symbol: \alpha
-              }
-              t_final:
-              {
-                value: 5e-08
-                min_val: 5e-09
-                max_val: 7.5e-08
-                unit: s
-                symbol: \alpha
-              }
-              t_up:
-              {
-                value: 1.999999999999999e-09
-                min_val: 0.0
-                max_val: 5e-08
-                unit: s
-                symbol: \alpha
-              }
-              t_down:
-              {
-                value: 4.8e-08
-                min_val: 0.0
-                max_val: 5e-08
-                unit: s
-                symbol: \alpha
-              }
-              risefall:
-              {
-                value: 1e-09
-                min_val: 1e-10
-                max_val: 2.5e-08
-                unit: s
-                symbol: \alpha
-              }
-            }
-            drag: false
-          }
-          carrier:
-          {
-            c3type: Carrier
-            params:
-            {
-              freq:
-              {
-                value: 6070000000.004072
-                min_val: 0.0
-                max_val: 8000000000.0
-                unit: Hz 2pi
-                symbol: \alpha
-              }
-              framechange:
-              {
-                value: 0.0
-                min_val: -3.141592653589793
-                max_val: 9.42477796076938
-                unit: rad
-                symbol: \alpha
-              }
-            }
-            name: carrier
-          }
-        }
-        dR1:
-        {
-          readout-pulse:
-          {
-            name: readout-pulse
-            c3type: Envelope
-            shape: flattop
-            params:
-            {
-              amp:
-              {
-                value: 0.06283185307179584
-                min_val: 0.0
-                max_val: 10.0
-                unit: V
-                symbol: \alpha
-              }
-              delta:
-              {
-                value: -1.0
-                min_val: -5.0
-                max_val: 3.0
-                unit: ""
-                symbol: \alpha
-              }
-              freq_offset:
-              {
-                value: -53000000.0
-                min_val: -56000000.0
-                max_val: -52000000.0
-                unit: Hz 2pi
-                symbol: \alpha
-              }
-              xy_angle:
-              {
-                value: -3.141592653589793
-                min_val: -3.141592653589793
-                max_val: 7.853981633974483
-                unit: rad
-                symbol: \alpha
-              }
-              sigma:
-              {
-                value: 4.999999969612645e-09
-                min_val: -2.0
-                max_val: 2.0
-                unit: s
-                symbol: \alpha
-              }
-              t_final:
-              {
-                value: 5e-08
-                min_val: 5e-09
-                max_val: 7.5e-08
-                unit: s
-                symbol: \alpha
-              }
-              t_up:
-              {
-                value: 1.999999999999999e-09
-                min_val: 0.0
-                max_val: 5e-08
-                unit: s
-                symbol: \alpha
-              }
-              t_down:
-              {
-                value: 4.8e-08
-                min_val: 0.0
-                max_val: 5e-08
-                unit: s
-                symbol: \alpha
-              }
-              risefall:
-              {
-                value: 1e-09
-                min_val: 1e-10
-                max_val: 2.5e-08
-                unit: s
-                symbol: \alpha
-              }
-            }
-            drag: false
-          }
-          carrier:
-          {
-            c3type: Carrier
-            params:
-            {
-              freq:
-              {
-                value: 6070000000.004072
-                min_val: 0.0
-                max_val: 8000000000.0
                 unit: Hz 2pi
                 symbol: \alpha
               }
@@ -1057,7 +575,7 @@
           freq:
           {
             value: 6020000000.0
-            min_val: 0.0
+            min_val: 1000000000.0
             max_val: 8000000000.0
             unit: Hz 2pi
             symbol: \alpha
@@ -1102,16 +620,6 @@
           Q
         ]
       }
-      dQ2:
-      {
-        c3type: Drive
-        params: {}
-        hamiltonian_func: x_drive
-        connected:
-        [
-          Q
-        ]
-      }
       dR1:
       {
         c3type: Drive
@@ -1120,6 +628,16 @@
         connected:
         [
           R
+        ]
+      }
+      dQ2:
+      {
+        c3type: Drive
+        params: {}
+        hamiltonian_func: x_drive
+        connected:
+        [
+          Q
         ]
       }
       dR2:
@@ -1189,25 +707,6 @@
         params: {}
         resolution: 100000000000.0
       }
-      Response:
-      {
-        c3type: Response
-        name: resp
-        inputs: 1
-        outputs: 1
-        params:
-        {
-          rise_time:
-          {
-            value: 3e-10
-            min_val: 5e-11
-            max_val: 6e-10
-            unit: s
-            symbol: \alpha
-          }
-        }
-        resolution: 100000000000.0
-      }
       Mixer:
       {
         c3type: Mixer
@@ -1247,14 +746,10 @@
         [
           AWG
         ]
-        Response:
-        [
-          DigitalToAnalog
-        ]
         Mixer:
         [
           LO
-          Response
+          DigitalToAnalog
         ]
         VoltsToHertz:
         [
@@ -1269,14 +764,10 @@
         [
           AWG
         ]
-        Response:
-        [
-          DigitalToAnalog
-        ]
         Mixer:
         [
           LO
-          Response
+          DigitalToAnalog
         ]
         VoltsToHertz:
         [
@@ -1291,14 +782,10 @@
         [
           AWG
         ]
-        Response:
-        [
-          DigitalToAnalog
-        ]
         Mixer:
         [
           LO
-          Response
+          DigitalToAnalog
         ]
         VoltsToHertz:
         [
@@ -1313,14 +800,10 @@
         [
           AWG
         ]
-        Response:
-        [
-          DigitalToAnalog
-        ]
         Mixer:
         [
           LO
-          Response
+          DigitalToAnalog
         ]
         VoltsToHertz:
         [
@@ -1331,7 +814,7 @@
   }
   options:
   {
-    propagate_batch_size: 1000
+    propagate_batch_size: null
     use_control_fields: true
     overwrite_propagators: true
     stop_partial_propagator_gradient: true
