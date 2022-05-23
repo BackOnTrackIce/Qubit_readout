@@ -572,7 +572,7 @@ parameter_map.store_values("Full_simulation_pmap_after_opt.c3log")
 
 plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False, filename="Full_simulation_after_optimization.png")
 
-t_sequence = tswap_10_20 + tswap_10_01 + t_readout
+t_sequence = tswap_10_20 + tswap_20_01 + t_readout
 plotIQ(exp, sequence, model.ann_opers[1], resonator_frequency, resonator_frequency, t_sequence, spacing=100, usePlotly=False)
 
 
