@@ -447,8 +447,8 @@ def plotPopulation(
     else:
         if filename:
             plt.savefig(filename, bbox_inches="tight", dpi=100)
-            plt.close()
         plt.show()
+        plt.close()
 
 
 def plotSplittedPopulation(
@@ -742,7 +742,8 @@ def plotIQ(
         drive_freq_r,
         t_total,
         spacing=100,
-        usePlotly=False
+        usePlotly=False,
+        filename=None
 ):
     
     """
@@ -806,21 +807,24 @@ def plotIQ(
         fig.add_trace(go.Scatter(x = Q0, y = I0, mode = "lines", name="Ground state"))
         fig.add_trace(go.Scatter(x = Q1, y = I1, mode = "lines", name ="Excited state"))
         fig.show()
-        fig.write_image("Readout_IQ.png")
+        if filename:
+            fig.write_image(filename+"_Readout_IQ.png")
     else:
         plt.figure(dpi=100)
         plt.plot(Q0, I0, label="Ground state", linestyle='--', marker='o')
         plt.plot(Q1, I1, label="Excited state", linestyle='--', marker='o')
         plt.legend()
         plt.show()
-        plt.savefig("IQ Plot.png")
+        if filename:
+            plt.savefig(filename+"_IQ Plot.png")
     
     plt.figure(dpi=100)
     plt.plot(ts, dist)
     plt.xlabel("Time (in seconds)")
     plt.ylabel("Distance (in arbitrary units)")
     plt.show()
-    plt.savefig("Distance plot.png")
+    if filename:
+        plt.savefig(filename+"_Distance_plot.png")
 
 
 

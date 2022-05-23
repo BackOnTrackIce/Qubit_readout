@@ -112,7 +112,7 @@ model.set_dressed(False)
 #%%
 
 # TODO - Check if 10e9 simulation resolution introduce too many errors?
-sim_res = 50e9
+sim_res = 100e9
 awg_res = 2e9
 v2hz = 1e9
 
@@ -172,16 +172,6 @@ generator = Gnr(
 
 #generator.devices["AWG"].enable_drag_2()
 #%%
-
-from qutip import *
-import numpy as np
-Nq = qubit_levels
-Nr = resonator_levels
-Ideal_gate = np.array(tensor(qeye(Nq), qeye(Nr)) + tensor(basis(Nq,1),basis(Nr,0))*tensor(basis(Nq,0),basis(Nr,1)).dag() + tensor(basis(Nq,0),basis(Nr,1))*tensor(basis(Nq,1),basis(Nr,0)).dag() - tensor(basis(Nq,1),basis(Nr,0))*tensor(basis(Nq,1),basis(Nr,0)).dag() - tensor(basis(Nq,0),basis(Nr,1))*tensor(basis(Nq,0),basis(Nr,1)).dag()) 
-#print(Ideal_gate)
-np.savetxt("ideal_gate.csv", Ideal_gate, delimiter=",")
-
-
 sideband = 50e6
 
 tswap_10_20 = 11e-9
@@ -240,14 +230,22 @@ carriers = [
 ]
 
 
-ideal_gate = np.loadtxt("ideal_gate.csv", delimiter=",", dtype=np.complex128)
+from qutip import *
+import numpy as np
+Nq = qubit_levels
+Nr = resonator_levels
+Ideal_gate = np.array(tensor(qeye(Nq), qeye(Nr)) + tensor(basis(Nq,1),basis(Nr,0))*tensor(basis(Nq,2),basis(Nr,0)).dag() + tensor(basis(Nq,2),basis(Nr,0))*tensor(basis(Nq,1),basis(Nr,0)).dag() - tensor(basis(Nq,1),basis(Nr,0))*tensor(basis(Nq,1),basis(Nr,0)).dag() - tensor(basis(Nq,2),basis(Nr,0))*tensor(basis(Nq,2),basis(Nr,0)).dag()) 
+np.savetxt("ideal_gate_10_20.csv", Ideal_gate, delimiter=",")
+
+ideal_gate_10_20 = np.loadtxt("ideal_gate_10_20.csv", delimiter=",", dtype=np.complex128)
+
 
 swap_gate_10_20 = gates.Instruction(
     name="swap_10_20", targets=[0, 1], t_start=0.0, t_end=tswap_10_20, channels=["dQ", "dR"],
-    ideal = ideal_gate
+    ideal = ideal_gate_10_20
 )
 
-swap_gate_10_20.set_ideal(ideal_gate)
+swap_gate_10_20.set_ideal(ideal_gate_10_20)
 
 swap_gate_10_20.add_component(Qswap_pulse, "dQ")
 swap_gate_10_20.add_component(carriers[0], "dQ")
@@ -325,14 +323,21 @@ carriers_2 = [
     pulse.Carrier(name="carrier", desc="Frequency of the local oscillator", params=carrier_parameters["R"])
 ]
 
-ideal_gate = np.loadtxt("ideal_gate.csv", delimiter=",", dtype=np.complex128)
+from qutip import *
+import numpy as np
+Nq = qubit_levels
+Nr = resonator_levels
+Ideal_gate = np.array(tensor(qeye(Nq), qeye(Nr)) + tensor(basis(Nq,2),basis(Nr,0))*tensor(basis(Nq,0),basis(Nr,1)).dag() + tensor(basis(Nq,0),basis(Nr,1))*tensor(basis(Nq,2),basis(Nr,0)).dag() - tensor(basis(Nq,2),basis(Nr,0))*tensor(basis(Nq,2),basis(Nr,0)).dag() - tensor(basis(Nq,0),basis(Nr,1))*tensor(basis(Nq,0),basis(Nr,1)).dag()) 
+np.savetxt("ideal_gate_20_01.csv", Ideal_gate, delimiter=",")
+
+ideal_gate_20_01 = np.loadtxt("ideal_gate_20_01.csv", delimiter=",", dtype=np.complex128)
 
 swap_gate_20_01 = gates.Instruction(
     name="swap_20_01", targets=[0, 1], t_start=0.0, t_end=tswap_20_01, channels=["dQ", "dR"],
-    ideal = ideal_gate
+    ideal = ideal_gate_20_01
 )
 
-swap_gate_20_01.set_ideal(ideal_gate)
+swap_gate_20_01.set_ideal(ideal_gate_20_01)
 
 swap_gate_20_01.add_component(Qswap2_pulse, "dQ")
 swap_gate_20_01.add_component(carriers_2[0], "dQ")
@@ -376,7 +381,7 @@ readout_pulse = pulse.Envelope(
 
 
 tlist = np.linspace(0,t_total, 1000)
-plotSignal(tlist, readout_pulse.shape(tlist, readout_pulse.params).numpy())
+
 
 nodrive_pulse = pulse.Envelope(
     name="no_drive", 
@@ -409,7 +414,9 @@ Readout_gate.add_component(copy.deepcopy(carriers[1]), "dR")
 gates_arr.append(Readout_gate)
 
 #%%
-gates_arr = [swap_gate_10_20]
+#TODO - reset this to include all the gates
+#gates_arr = [swap_gate_10_20, Readout_gate]
+
 parameter_map = PMap(instructions=gates_arr, model=model, generator=generator)
 exp = Exp(pmap=parameter_map, sim_res=sim_res)
 #exp.set_opt_gates(["swap_10_20[0, 1]", "swap_20_01[0, 1]", 'Readout[1]'])
@@ -417,7 +424,7 @@ exp = Exp(pmap=parameter_map, sim_res=sim_res)
 
 model.set_FR(False)
 model.set_lindbladian(True)
-exp.propagate_batch_size = 1000
+exp.propagate_batch_size = None
 
 #%%
 unitaries = exp.compute_propagators()
@@ -425,8 +432,8 @@ print(unitaries)
 
 #%%
 
-exp.write_config("Full_simulation.hjson")
-parameter_map.store_values("Full_simulation_pmap_before_opt.c3log")
+exp.write_config("Full_simulation_20H.hjson")
+parameter_map.store_values("Full_simulation_pmap_before_opt_20H.c3log")
 
 #%%
 
@@ -438,11 +445,29 @@ psi_init[0][init_state_index] = 1
 init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
-sequence = ["swap_10_20[0, 1]"]#, "swap_20_01[0, 1]", 'Readout[1]']
-plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False)#, filename="Full_simulation_before_optimization.png")
+sequence = ["swap_10_20[0, 1]", "swap_20_01[0, 1]", 'Readout[1]']
+
+plotPopulation(
+    exp=exp, 
+    psi_init=init_state, 
+    sequence=sequence, 
+    usePlotly=False, 
+    filename="Full_simulation_before_optimization.png"
+)
 
 t_sequence = tswap_10_20 + tswap_20_01 + t_readout
-plotIQ(exp, sequence, model.ann_opers[1], resonator_frequency, resonator_frequency, t_sequence, spacing=100, usePlotly=False)
+
+plotIQ(
+    exp=exp, 
+    sequence=sequence, 
+    annihilation_operator=model.ann_opers[1], 
+    drive_freq_q=resonator_frequency, 
+    drive_freq_r=resonator_frequency, 
+    t_total=t_sequence, 
+    spacing=100, 
+    usePlotly=False, 
+    filename="Full_sim_before_opt_20H"
+)
 #%%
 
 print("Starting optimization .... ")
@@ -560,7 +585,6 @@ opt = OptimalControl(
 exp.set_opt_gates(["swap_10_20[0, 1]", "swap_20_01[0, 1]", 'Readout[1]'])
 opt.set_exp(exp)
 
-
 #%%
 tf.config.run_functions_eagerly(True)
 opt.optimize_controls()
@@ -570,10 +594,26 @@ print(parameter_map.print_parameters())
 parameter_map.store_values("Full_simulation_pmap_after_opt.c3log")
 
 
-plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False, filename="Full_simulation_after_optimization.png")
+plotPopulation(
+    exp=exp, 
+    psi_init=init_state, 
+    sequence=sequence, 
+    usePlotly=False, 
+    filename="Full_simulation_after_optimization.png"
+)
 
 t_sequence = tswap_10_20 + tswap_20_01 + t_readout
-plotIQ(exp, sequence, model.ann_opers[1], resonator_frequency, resonator_frequency, t_sequence, spacing=100, usePlotly=False)
+plotIQ(
+    exp=exp, 
+    sequence=sequence, 
+    annihilation_operator=model.ann_opers[1], 
+    drive_freq_q=resonator_frequency, 
+    drive_freq_r=resonator_frequency, 
+    t_total=t_sequence, 
+    spacing=100, 
+    usePlotly=False,
+    filename="Full_sim_after_opt_20H"
+)
 
 
 # %%
