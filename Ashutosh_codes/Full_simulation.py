@@ -112,7 +112,7 @@ model.set_dressed(False)
 #%%
 
 # TODO - Check if 10e9 simulation resolution introduce too many errors?
-sim_res = 10e9
+sim_res = 50e9
 awg_res = 2e9
 v2hz = 1e9
 
@@ -170,7 +170,7 @@ generator = Gnr(
 
     )
 
-generator.devices["AWG"].enable_drag_2()
+#generator.devices["AWG"].enable_drag_2()
 #%%
 
 from qutip import *
@@ -409,10 +409,10 @@ Readout_gate.add_component(copy.deepcopy(carriers[1]), "dR")
 gates_arr.append(Readout_gate)
 
 #%%
-
+gates_arr = [swap_gate_10_20]
 parameter_map = PMap(instructions=gates_arr, model=model, generator=generator)
-exp = Exp(pmap=parameter_map)
-exp.set_opt_gates(["swap_10_20[0, 1]", "swap_20_01[0, 1]", 'Readout[1]'])
+exp = Exp(pmap=parameter_map, sim_res=sim_res)
+#exp.set_opt_gates(["swap_10_20[0, 1]", "swap_20_01[0, 1]", 'Readout[1]'])
 #%%
 
 model.set_FR(False)
@@ -438,8 +438,8 @@ psi_init[0][init_state_index] = 1
 init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
-sequence = ["swap_10_20[0, 1]", "swap_20_01[0, 1]", 'Readout[1]']
-plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False, filename="Full_simulation_before_optimization.png")
+sequence = ["swap_10_20[0, 1]"]#, "swap_20_01[0, 1]", 'Readout[1]']
+plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False)#, filename="Full_simulation_before_optimization.png")
 
 t_sequence = tswap_10_20 + tswap_20_01 + t_readout
 plotIQ(exp, sequence, model.ann_opers[1], resonator_frequency, resonator_frequency, t_sequence, spacing=100, usePlotly=False)
