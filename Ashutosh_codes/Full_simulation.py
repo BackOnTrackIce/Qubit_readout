@@ -424,7 +424,7 @@ exp = Exp(pmap=parameter_map, sim_res=sim_res)
 
 model.set_FR(False)
 model.set_lindbladian(True)
-exp.propagate_batch_size = None
+exp.propagate_batch_size = 1000
 
 #%%
 unitaries = exp.compute_propagators()

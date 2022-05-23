@@ -112,7 +112,7 @@ model.set_dressed(False)
 #%%
 
 # TODO - Check if 10e9 simulation resolution introduce too many errors?
-sim_res = 100e9
+sim_res = 50e9
 awg_res = 2e9
 v2hz = 1e9
 
@@ -122,18 +122,6 @@ generator = Gnr(
             "AWG": devices.AWG(name='awg', resolution=awg_res, outputs=1),
             "DigitalToAnalog": devices.DigitalToAnalog(
                 name="dac",
-                resolution=sim_res,
-                inputs=1,
-                outputs=1
-            ),
-            "Response": devices.Response(
-                name='resp',
-                rise_time=Qty(
-                    value=0.3e-9,
-                    min_val=0.05e-9,
-                    max_val=0.6e-9,
-                    unit='s'
-                ),
                 resolution=sim_res,
                 inputs=1,
                 outputs=1
@@ -415,7 +403,7 @@ gates_arr.append(Readout_gate)
 
 #%%
 #TODO - reset this to include all the gates
-gates_arr = [swap_gate_10_20, Readout_gate]
+gates_arr = [swap_gate_10_20]
 
 parameter_map = PMap(instructions=gates_arr, model=model, generator=generator)
 exp = Exp(pmap=parameter_map, sim_res=sim_res)
@@ -424,7 +412,7 @@ exp = Exp(pmap=parameter_map, sim_res=sim_res)
 
 model.set_FR(False)
 model.set_lindbladian(True)
-exp.propagate_batch_size = None
+exp.propagate_batch_size = 10
 
 #%%
 unitaries = exp.compute_propagators()
@@ -581,20 +569,23 @@ opt = OptimalControl(
     pmap=parameter_map,
     algorithm=algorithms.lbfgs,
     options={"maxfun":250},
-    run_name="swap_and_readout",
+    run_name="Test_swap_and_readout",
     fid_func_kwargs={"params":fid_params}
 )
-exp.set_opt_gates(["swap_10_20[0, 1]", 'Readout[1]'])#, "swap_20_01[0, 1]", 'Readout[1]'])
+exp.set_opt_gates(["swap_10_20[0, 1]"])#, "swap_20_01[0, 1]", 'Readout[1]'])
 opt.set_exp(exp)
 
 #%%
-tf.config.run_functions_eagerly(True)
+#tf.config.run_functions_eagerly(True)
 opt.optimize_controls()
 print(opt.current_best_goal)
 print(parameter_map.print_parameters())
 
 parameter_map.store_values("Full_simulation_pmap_after_opt.c3log")
 
+#%%
+
+sequence = ["swap_10_20[0, 1]"]
 
 plotPopulation(
     exp=exp, 
