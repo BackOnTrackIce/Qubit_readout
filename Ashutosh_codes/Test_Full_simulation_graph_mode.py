@@ -51,7 +51,7 @@ qubit = chip.Qubit(
     temp=Qty(value=qubit_temp,min_val=0.0,max_val=0.12,unit='K')
 )
 
-resonator_levels = 5
+resonator_levels = 10
 resonator_frequency = 6.02e9
 resonator_t1 = 27e-6
 resonator_t2star = 39e-6
@@ -112,7 +112,7 @@ model.set_dressed(False)
 #%%
 
 # TODO - Check if 10e9 simulation resolution introduce too many errors?
-sim_res = 50e9
+sim_res = 100e9
 awg_res = 2e9
 v2hz = 1e9
 
@@ -403,7 +403,7 @@ gates_arr.append(Readout_gate)
 
 #%%
 #TODO - reset this to include all the gates
-gates_arr = [swap_gate_10_20]
+#gates_arr = [swap_gate_10_20]
 
 parameter_map = PMap(instructions=gates_arr, model=model, generator=generator)
 exp = Exp(pmap=parameter_map, sim_res=sim_res)
@@ -411,8 +411,8 @@ exp = Exp(pmap=parameter_map, sim_res=sim_res)
 #%%
 
 model.set_FR(False)
-model.set_lindbladian(True)
-exp.propagate_batch_size = 10
+model.set_lindbladian(False)
+exp.propagate_batch_size = 1000
 
 #%%
 unitaries = exp.compute_propagators()
@@ -420,8 +420,8 @@ print(unitaries)
 
 #%%
 
-exp.write_config("Full_simulation_20H.hjson")
-parameter_map.store_values("Full_simulation_pmap_before_opt_20H.c3log")
+exp.write_config("Full_simulation_40H_coherent.hjson")
+parameter_map.store_values("Full_simulation_pmap_before_opt_40H_coherent.c3log")
 
 #%%
 
@@ -477,8 +477,6 @@ parameter_map.set_opt_map([
     [("swap_10_20[0, 1]", "dQ", "swap_pulse", "xy_angle")],
     [("swap_10_20[0, 1]", "dQ", "swap_pulse", "freq_offset")],
     [("swap_10_20[0, 1]", "dQ", "swap_pulse", "delta")],
-])
-"""
     [("swap_20_01[0, 1]", "dR", "carrier", "freq")],
     [("swap_20_01[0, 1]", "dR", "swap2_pulse", "amp")],
     [("swap_20_01[0, 1]", "dR", "swap2_pulse", "t_up")],
@@ -512,7 +510,7 @@ parameter_map.set_opt_map([
     [("Readout[1]", "dQ", "readout-pulse", "freq_offset")],
     [("Readout[1]", "dQ", "readout-pulse", "delta")],
 ])
-"""
+
 parameter_map.print_parameters()
 
 #%%
@@ -572,7 +570,7 @@ opt = OptimalControl(
     run_name="Test_swap_and_readout",
     fid_func_kwargs={"params":fid_params}
 )
-exp.set_opt_gates(["swap_10_20[0, 1]"])#, "swap_20_01[0, 1]", 'Readout[1]'])
+exp.set_opt_gates(["swap_10_20[0, 1]", "swap_20_01[0, 1]", 'Readout[1]'])
 opt.set_exp(exp)
 
 #%%
@@ -584,9 +582,6 @@ print(parameter_map.print_parameters())
 parameter_map.store_values("Full_simulation_pmap_after_opt.c3log")
 
 #%%
-
-sequence = ["swap_10_20[0, 1]"]
-
 plotPopulation(
     exp=exp, 
     psi_init=init_state, 
