@@ -443,7 +443,7 @@ def plotPopulation(
     if usePlotly:
         if filename:
             fig.write_html(filename+".html")
-        fig.show()
+        #fig.show()
     else:
         if filename:
             plt.savefig(filename, bbox_inches="tight", dpi=100)
@@ -743,7 +743,9 @@ def plotIQ(
         t_total,
         spacing=100,
         usePlotly=False,
-        filename=None
+        filename=None,
+        connect_points=False,
+        second_excited=False
 ):
     
     """
@@ -796,6 +798,22 @@ def plotIQ(
     I1 = np.imag(expect_val_1)
 
 
+    if second_excited:
+        state_index = exp.pmap.model.get_state_index((2,0))
+        psi_init_2 = [[0] * model.tot_dim]
+        psi_init_2[0][state_index] = 1
+        init_state_2 = tf.transpose(tf.constant(psi_init_2, tf.complex128))
+        
+        if model.lindbladian:
+            init_state_2 = tf_utils.tf_state_to_dm(init_state_2)
+
+        psi_list = calculateState(exp, init_state_2, sequence)
+        psi_list = psi_list[::spacing]
+        psi_list_2 =  frameOfDrive(exp, psi_list, drive_freq_q, drive_freq_r, spacing, t_total)
+        expect_val_2 = calculateExpectationValue(psi_list_2, annihilation_operator, model.lindbladian)
+        Q2 = np.real(expect_val_2)
+        I2 = np.imag(expect_val_2)
+
     n = len(psi_list)
     ts = tf.linspace(0.0, t_total, n, name="linspace")
     dist = []
@@ -806,13 +824,23 @@ def plotIQ(
         fig = go.Figure()
         fig.add_trace(go.Scatter(x = Q0, y = I0, mode = "lines", name="Ground state"))
         fig.add_trace(go.Scatter(x = Q1, y = I1, mode = "lines", name ="Excited state"))
+        if second_excited:
+            fig.add_trace(go.Scatter(x = Q2, y = I2, mode = "lines", name ="Second excited state"))
         fig.show()
         if filename:
             fig.write_image(filename+"_Readout_IQ.png")
     else:
-        plt.figure(dpi=100)
+        plt.figure(dpi=150)
         plt.plot(Q0, I0, label="Ground state", linestyle='--', marker='o')
         plt.plot(Q1, I1, label="Excited state", linestyle='--', marker='o')
+        if second_excited:
+            plt.plot(Q2, I2, label="Second excited state", linestyle='--', marker='o')
+
+        
+        if connect_points:
+            for x1,x2,y1,y2 in zip(Q0, Q1, I0, I1):
+                plt.plot([x1, x2], [y1,y2], linestyle="dotted", color="black")
+
         plt.legend()
         plt.show()
         if filename:
