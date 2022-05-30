@@ -51,7 +51,7 @@ qubit = chip.Qubit(
     temp=Qty(value=qubit_temp,min_val=0.0,max_val=0.12,unit='K')
 )
 
-resonator_levels = 10
+resonator_levels = 5
 resonator_frequency = 6.02e9
 resonator_t1 = 27e-6
 resonator_t2star = 39e-6
@@ -412,8 +412,8 @@ exp = Exp(pmap=parameter_map, sim_res=sim_res)
 #%%
 
 model.set_FR(False)
-model.set_lindbladian(False)
-exp.propagate_batch_size = 1000
+model.set_lindbladian(True)
+exp.propagate_batch_size = 10
 
 #%%
 unitaries = exp.compute_propagators()
@@ -555,10 +555,11 @@ opt = OptimalControl(
     fid_func=fidelities.swap_and_readout,
     fid_subspace=["Q", "R"],
     pmap=parameter_map,
-    algorithm=algorithms.lbfgs,
-    options={"maxfun":250},
+    algorithm=algorithms.lbfgs_grad_free,
+    options={"ftol":1e-7},
     run_name="Test_swap_and_readout",
-    fid_func_kwargs={"params":fid_params}
+    fid_func_kwargs={"params":fid_params},
+    store_unitaries=False
 )
 exp.set_opt_gates(["swap_10_20[0, 1]", "swap_20_01[0, 1]", 'Readout[1]'])
 opt.set_exp(exp)

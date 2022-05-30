@@ -308,8 +308,8 @@ nodrive_pulse = pulse.Envelope(
     shape=envelopes.no_drive
 )
 
-drive_freq_qubit = 9.5125e9
-drive_freq_resonator = 9.5125e9
+drive_freq_qubit = 9.518e9
+drive_freq_resonator = 9.518e9
 carrier_freq = [drive_freq_qubit, drive_freq_resonator]
 carrier_parameters = {
             "Q":{"freq": Qty(value=carrier_freq[0], min_val=0.0, max_val=10e9, unit="Hz 2pi"),
@@ -424,9 +424,10 @@ exp = Exp(pmap=parameter_map, sim_res=sim_res)
 
 model.set_FR(False)
 model.set_lindbladian(True)
-exp.propagate_batch_size = 1000
+exp.propagate_batch_size = 100
 
 #%%
+"""
 unitaries = exp.compute_propagators()
 print(unitaries)
 
@@ -468,6 +469,7 @@ plotIQ(
     usePlotly=False, 
     filename="Full_sim_before_opt_20H"
 )
+"""
 #%%
 
 print("Starting optimization .... ")
@@ -577,8 +579,7 @@ opt = OptimalControl(
     fid_func=fidelities.swap_and_readout,
     fid_subspace=["Q", "R"],
     pmap=parameter_map,
-    algorithm=algorithms.lbfgs,
-    options={"maxfun":250},
+    algorithm=algorithms.lbfgs_grad_free,
     run_name="swap_and_readout",
     fid_func_kwargs={"params":fid_params}
 )
@@ -586,14 +587,13 @@ exp.set_opt_gates(["swap_10_20[0, 1]", "swap_20_01[0, 1]", 'Readout[1]'])
 opt.set_exp(exp)
 
 #%%
-tf.config.run_functions_eagerly(True)
 opt.optimize_controls()
 print(opt.current_best_goal)
 print(parameter_map.print_parameters())
 
 parameter_map.store_values("Full_simulation_pmap_after_opt.c3log")
 
-
+"""
 plotPopulation(
     exp=exp, 
     psi_init=init_state, 
@@ -614,6 +614,6 @@ plotIQ(
     usePlotly=False,
     filename="Full_sim_after_opt_20H"
 )
-
+"""
 
 # %%
