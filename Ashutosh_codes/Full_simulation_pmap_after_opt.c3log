@@ -1,0 +1,254 @@
+{
+  opt_map:
+  [
+    [
+      swap_10_20[0, 1]-dR-carrier-freq
+    ]
+    [
+      swap_10_20[0, 1]-dR-swap_pulse-amp
+    ]
+    [
+      swap_10_20[0, 1]-dR-swap_pulse-t_up
+    ]
+    [
+      swap_10_20[0, 1]-dR-swap_pulse-t_down
+    ]
+    [
+      swap_10_20[0, 1]-dR-swap_pulse-risefall
+    ]
+    [
+      swap_10_20[0, 1]-dR-swap_pulse-xy_angle
+    ]
+    [
+      swap_10_20[0, 1]-dR-swap_pulse-freq_offset
+    ]
+    [
+      swap_10_20[0, 1]-dR-swap_pulse-delta
+    ]
+    [
+      swap_10_20[0, 1]-dQ-carrier-freq
+    ]
+    [
+      swap_10_20[0, 1]-dQ-swap_pulse-amp
+    ]
+    [
+      swap_10_20[0, 1]-dQ-swap_pulse-t_up
+    ]
+    [
+      swap_10_20[0, 1]-dQ-swap_pulse-t_down
+    ]
+    [
+      swap_10_20[0, 1]-dQ-swap_pulse-risefall
+    ]
+    [
+      swap_10_20[0, 1]-dQ-swap_pulse-xy_angle
+    ]
+    [
+      swap_10_20[0, 1]-dQ-swap_pulse-freq_offset
+    ]
+    [
+      swap_10_20[0, 1]-dQ-swap_pulse-delta
+    ]
+    [
+      swap_20_01[0, 1]-dR-carrier-freq
+    ]
+    [
+      swap_20_01[0, 1]-dR-swap2_pulse-amp
+    ]
+    [
+      swap_20_01[0, 1]-dR-swap2_pulse-t_up
+    ]
+    [
+      swap_20_01[0, 1]-dR-swap2_pulse-t_down
+    ]
+    [
+      swap_20_01[0, 1]-dR-swap2_pulse-risefall
+    ]
+    [
+      swap_20_01[0, 1]-dR-swap2_pulse-xy_angle
+    ]
+    [
+      swap_20_01[0, 1]-dR-swap2_pulse-freq_offset
+    ]
+    [
+      swap_20_01[0, 1]-dR-swap2_pulse-delta
+    ]
+    [
+      swap_20_01[0, 1]-dQ-carrier-freq
+    ]
+    [
+      swap_20_01[0, 1]-dQ-swap2_pulse-amp
+    ]
+    [
+      swap_20_01[0, 1]-dQ-swap2_pulse-t_up
+    ]
+    [
+      swap_20_01[0, 1]-dQ-swap2_pulse-t_down
+    ]
+    [
+      swap_20_01[0, 1]-dQ-swap2_pulse-risefall
+    ]
+    [
+      swap_20_01[0, 1]-dQ-swap2_pulse-xy_angle
+    ]
+    [
+      swap_20_01[0, 1]-dQ-swap2_pulse-freq_offset
+    ]
+    [
+      swap_20_01[0, 1]-dQ-swap2_pulse-delta
+    ]
+    [
+      Readout[1]-dR-carrier-freq
+    ]
+    [
+      Readout[1]-dR-readout-pulse-amp
+    ]
+    [
+      Readout[1]-dR-readout-pulse-t_up
+    ]
+    [
+      Readout[1]-dR-readout-pulse-t_down
+    ]
+    [
+      Readout[1]-dR-readout-pulse-risefall
+    ]
+    [
+      Readout[1]-dR-readout-pulse-xy_angle
+    ]
+    [
+      Readout[1]-dR-readout-pulse-freq_offset
+    ]
+    [
+      Readout[1]-dR-readout-pulse-delta
+    ]
+    [
+      Readout[1]-dQ-carrier-freq
+    ]
+    [
+      Readout[1]-dQ-readout-pulse-amp
+    ]
+    [
+      Readout[1]-dQ-readout-pulse-t_up
+    ]
+    [
+      Readout[1]-dQ-readout-pulse-t_down
+    ]
+    [
+      Readout[1]-dQ-readout-pulse-risefall
+    ]
+    [
+      Readout[1]-dQ-readout-pulse-xy_angle
+    ]
+    [
+      Readout[1]-dQ-readout-pulse-freq_offset
+    ]
+    [
+      Readout[1]-dQ-readout-pulse-delta
+    ]
+  ]
+  units:
+  [
+    Hz 2pi
+    V
+    s
+    s
+    s
+    rad
+    Hz 2pi
+    ""
+    Hz 2pi
+    V
+    s
+    s
+    s
+    rad
+    Hz 2pi
+    ""
+    Hz 2pi
+    V
+    s
+    s
+    s
+    rad
+    Hz 2pi
+    ""
+    Hz 2pi
+    V
+    s
+    s
+    s
+    rad
+    Hz 2pi
+    ""
+    Hz 2pi
+    V
+    s
+    s
+    s
+    rad
+    Hz 2pi
+    ""
+    Hz 2pi
+    V
+    s
+    s
+    s
+    rad
+    Hz 2pi
+    ""
+  ]
+  optim_status:
+  {
+    params:
+    [
+      7077240163.035808
+      0.2475136660313093
+      2.813915236513646e-09
+      9.27517953977564e-09
+      1.2640085082058877e-09
+      -0.7637606341988695
+      -53294025.43132327
+      -0.589599839419348
+      6943358444.002261
+      -1.0025669736273082
+      3.740885601904456e-09
+      9.127843831212129e-09
+      8.768269332057871e-10
+      -0.24917602803127825
+      -53182369.963590406
+      -1.1939912033169375
+      10233654046.170683
+      2.2160251730234375
+      -2.0113356614497543e-10
+      1.7709935482197195e-07
+      3.339425879836249e-09
+      -0.18186274008598202
+      -52862346.21213058
+      -0.7490017171218044
+      9887856434.183718
+      0.8613433915917562
+      -8.530875952312654e-10
+      1.765644230656771e-07
+      6.3917575088583275e-09
+      0.5536682794640533
+      -52727728.79682296
+      -0.5187553709952022
+      6059691618.291185
+      0.07484076814456231
+      2.608705273794559e-09
+      4.7050921793943185e-08
+      1.903126313358605e-09
+      -3.469189267911431
+      -52843577.10385432
+      -0.2665589449129291
+      5530975279.3604765
+      -0.19382939880175581
+      -1.7564939637638778e-09
+      4.8627190811649175e-08
+      1.5575073488655686e-09
+      -0.5425227010619904
+      -52971802.050015114
+      -0.6067186168974397
+    ]
+  }
+}
