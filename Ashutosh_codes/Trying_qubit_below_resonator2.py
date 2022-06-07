@@ -78,7 +78,7 @@ opt = OptimalControl(
     fid_func=fidelities.state_transfer_infid_set_full,
     fid_subspace=["Q", "R"],
     pmap=parameter_map,
-    algorithm=algorithms.lbfgs,
+    algorithm=algorithms.cma_pre_lbfgs,
     run_name="swap_and_readout",
     fid_func_kwargs={"params":fid_params}
 )
