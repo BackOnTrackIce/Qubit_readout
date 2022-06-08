@@ -338,9 +338,13 @@ psi_init[0][init_state_index] = 1
 init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
-#result = exp.solve_lindblad_ode(init_state)
-#rhos = result["rho"]
-#ts = result["ts"]
+
+model.set_lindbladian(False)
+sequence = ["swap_10_20[0, 1]"]
+Num_shots = 3
+result = exp.solve_stochastic_ode(init_state, sequence, Num_shots)
+rhos = result["psi"]
+ts = result["ts"]
 # %%
 
 def plotPopulationFromState(
