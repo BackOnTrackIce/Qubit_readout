@@ -31,12 +31,14 @@ from c3.optimizers.optimalcontrol import OptimalControl
 import plotly.graph_objects as go
 from plotting import *
 from utilities_functions import *
+
+from matplotlib import cm
 #%%
 
 qubit_levels = 4
 qubit_frequency = 7.86e9
 qubit_anharm = -264e6
-qubit_t1 = 27e-6
+qubit_t1 = 1e-9#27e-6
 qubit_t2star = 39e-6
 qubit_temp = 50e-3
 
@@ -46,20 +48,20 @@ qubit = chip.Qubit(
     freq=Qty(value=qubit_frequency,min_val=1e9 ,max_val=8e9 ,unit='Hz 2pi'),
     anhar=Qty(value=qubit_anharm,min_val=-380e6 ,max_val=-120e6 ,unit='Hz 2pi'),
     hilbert_dim=qubit_levels,
-    t1=Qty(value=qubit_t1,min_val=1e-6,max_val=90e-6,unit='s'),
+    t1=Qty(value=qubit_t1,min_val=1e-10,max_val=90e-6,unit='s'),
     t2star=Qty(value=qubit_t2star,min_val=10e-6,max_val=90e-3,unit='s'),
     temp=Qty(value=qubit_temp,min_val=0.0,max_val=0.12,unit='K')
 )
 
 resonator_levels = 4
 resonator_frequency = 6.02e9
-resonator_t1 = 27e-6
+resonator_t1 = 1e-9#27e-6
 resonator_t2star = 39e-6
 resonator_temp = 50e-3
 
 parameters_resonator = {
     "freq": Qty(value=resonator_frequency,min_val=0e9 ,max_val=8e9 ,unit='Hz 2pi'),
-    "t1": Qty(value=resonator_t1,min_val=1e-6,max_val=90e-6,unit='s'),
+    "t1": Qty(value=resonator_t1,min_val=1e-10,max_val=90e-6,unit='s'),
     "t2star": Qty(value=resonator_t2star,min_val=10e-6,max_val=90e-3,unit='s'),
     "temp": Qty(value=resonator_temp,min_val=0.0,max_val=0.12,unit='K')
 }
@@ -112,7 +114,7 @@ model.set_dressed(False)
 #%%
 
 # TODO - Check if 10e9 simulation resolution introduce too many errors?
-sim_res = 100e9
+sim_res = 200e9
 awg_res = 2e9
 v2hz = 1e9
 
@@ -392,7 +394,7 @@ def plotPopulationFromState(
                 loc="upper left")
             plt.tight_layout()
     
-plotPopulationFromState(exp, init_state, sequence, Num_shots)
+plotPopulationFromState(exp, init_state, sequence, Num_shots=1)
 # %%
 exp.set_prop_method("pwc")
 exp.compute_propagators()
