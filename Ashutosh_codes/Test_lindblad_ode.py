@@ -330,7 +330,7 @@ exp = Exp(pmap=parameter_map, sim_res=sim_res)
 #print(unitaries)
 # %%
 exp.set_opt_gates(["swap_10_20[0, 1]"])#, "swap_20_01[0, 1]"])
-
+model.set_lindbladian(False)
 #tf.config.run_functions_eagerly(True)
 psi_init = [[0] * model.tot_dim]
 init_state_index = model.get_state_indeces([(1,0)])[0]
@@ -339,22 +339,24 @@ init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
 
-model.set_lindbladian(False)
+
 sequence = ["swap_10_20[0, 1]"]
-Num_shots = 3
-result = exp.solve_stochastic_ode(init_state, sequence, Num_shots)
-rhos = result["psi"]
-ts = result["ts"]
+Num_shots = 10
+#result = exp.solve_stochastic_ode(init_state, sequence, Num_shots)
+#rhos = result["psi"]
+#ts = result["ts"]
 # %%
 
 def plotPopulationFromState(
     exp: Experiment,
     init_state: tf.Tensor,
+    sequence: List[str],
+    Num_shots = 1
 ):
 
     model = exp.pmap.model
     if model.lindbladian:
-        result = exp.solve_lindblad_ode(init_state)
+        result = exp.solve_lindblad_ode(init_state, sequence)
         rhos = result["rho"]
         ts = result["ts"]
         pops = []
@@ -369,10 +371,28 @@ def plotPopulationFromState(
             loc="upper left")
         plt.tight_layout()
     else:
-        print("Not Implemented")
-    
+        result = exp.solve_stochastic_ode(init_state, sequence, Num_shots)
+        psis = result["psi"]
+        ts = result["ts"]
+        pops = []
+        for i in range(Num_shots):
+            pops_shots = []
+            for psi in psis[i]:
+                pop_t = tf.abs(psi)**2
+                pops_shots.append(tf.reshape(pop_t, pop_t.shape[:-1]))
+            pops.append(pops_shots)
 
-plotPopulationFromState(exp, init_state)
+        plt.figure(figsize=[10,5])
+        for i in range(len(pops)):
+            plt.plot(ts, pops[i])
+            plt.legend(
+                model.state_labels,
+                ncol=int(np.ceil(model.tot_dim / 15)),
+                bbox_to_anchor=(1.05, 1.0),
+                loc="upper left")
+            plt.tight_layout()
+    
+plotPopulationFromState(exp, init_state, sequence, Num_shots)
 # %%
 exp.set_prop_method("pwc")
 exp.compute_propagators()
