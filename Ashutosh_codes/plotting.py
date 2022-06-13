@@ -884,3 +884,49 @@ def plotPulseShapes(pmap, sequence, drive_channels, pulse_names, ts):
         plt.plot(ts, pulse_shapes[i], label=drive_channels[i])
 
     plt.legend()
+
+
+def plotPopulationFromState(
+    exp: Experiment,
+    init_state: tf.Tensor,
+    sequence: List[str],
+    Num_shots = 1
+):
+
+    model = exp.pmap.model
+    if model.lindbladian:
+        result = exp.solve_lindblad_ode(init_state, sequence)
+        rhos = result["states"]
+        ts = result["ts"]
+        pops = []
+        for rho in rhos:
+            pops.append(tf.math.real(tf.linalg.diag_part(rho)))
+        plt.figure(figsize=[10,5])
+        plt.plot(ts, pops)
+        plt.legend(
+            model.state_labels,
+            ncol=int(np.ceil(model.tot_dim / 15)),
+            bbox_to_anchor=(1.05, 1.0),
+            loc="upper left")
+        plt.tight_layout()
+    else:
+        result = exp.solve_stochastic_ode(init_state, sequence, Num_shots)
+        psis = result["states"]
+        ts = result["ts"]
+        pops = []
+        for i in range(Num_shots):
+            pops_shots = []
+            for psi in psis[i]:
+                pop_t = tf.abs(psi)**2
+                pops_shots.append(tf.reshape(pop_t, pop_t.shape[:-1]))
+            pops.append(pops_shots)
+
+        plt.figure(figsize=[10,5])
+        for i in range(len(pops)):
+            plt.plot(ts, pops[i])
+            plt.legend(
+                model.state_labels,
+                ncol=int(np.ceil(model.tot_dim / 15)),
+                bbox_to_anchor=(1.05, 1.0),
+                loc="upper left")
+            plt.tight_layout()

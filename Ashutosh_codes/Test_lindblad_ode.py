@@ -38,7 +38,7 @@ from matplotlib import cm
 qubit_levels = 4
 qubit_frequency = 7.86e9
 qubit_anharm = -264e6
-qubit_t1 = 1e-9#27e-6
+qubit_t1 = 10e-6#27e-6
 qubit_t2star = 39e-6
 qubit_temp = 50e-3
 
@@ -48,20 +48,20 @@ qubit = chip.Qubit(
     freq=Qty(value=qubit_frequency,min_val=1e9 ,max_val=8e9 ,unit='Hz 2pi'),
     anhar=Qty(value=qubit_anharm,min_val=-380e6 ,max_val=-120e6 ,unit='Hz 2pi'),
     hilbert_dim=qubit_levels,
-    t1=Qty(value=qubit_t1,min_val=1e-10,max_val=90e-6,unit='s'),
+    t1=Qty(value=qubit_t1,min_val=1e-10,max_val=90e-3,unit='s'),
     t2star=Qty(value=qubit_t2star,min_val=10e-6,max_val=90e-3,unit='s'),
     temp=Qty(value=qubit_temp,min_val=0.0,max_val=0.12,unit='K')
 )
 
 resonator_levels = 4
 resonator_frequency = 6.02e9
-resonator_t1 = 1e-9#27e-6
+resonator_t1 = 10e-6#27e-6
 resonator_t2star = 39e-6
 resonator_temp = 50e-3
 
 parameters_resonator = {
     "freq": Qty(value=resonator_frequency,min_val=0e9 ,max_val=8e9 ,unit='Hz 2pi'),
-    "t1": Qty(value=resonator_t1,min_val=1e-10,max_val=90e-6,unit='s'),
+    "t1": Qty(value=resonator_t1,min_val=1e-10,max_val=90e-3,unit='s'),
     "t2star": Qty(value=resonator_t2star,min_val=10e-6,max_val=90e-3,unit='s'),
     "temp": Qty(value=resonator_temp,min_val=0.0,max_val=0.12,unit='K')
 }
@@ -114,7 +114,7 @@ model.set_dressed(False)
 #%%
 
 # TODO - Check if 10e9 simulation resolution introduce too many errors?
-sim_res = 200e9
+sim_res = 100e9#500e9
 awg_res = 2e9
 v2hz = 1e9
 
@@ -332,7 +332,7 @@ exp = Exp(pmap=parameter_map, sim_res=sim_res)
 #print(unitaries)
 # %%
 exp.set_opt_gates(["swap_10_20[0, 1]"])#, "swap_20_01[0, 1]"])
-model.set_lindbladian(False)
+model.set_lindbladian(True)
 #tf.config.run_functions_eagerly(True)
 psi_init = [[0] * model.tot_dim]
 init_state_index = model.get_state_indeces([(1,0)])[0]
@@ -343,12 +343,11 @@ if model.lindbladian:
 
 
 sequence = ["swap_10_20[0, 1]"]
-Num_shots = 10
-#result = exp.solve_stochastic_ode(init_state, sequence, Num_shots)
-#rhos = result["psi"]
+#Num_shots = 10
+#result = exp.solve_lindblad_ode(init_state, sequence)
+#rhos = result["states"]
 #ts = result["ts"]
 # %%
-
 def plotPopulationFromState(
     exp: Experiment,
     init_state: tf.Tensor,
@@ -359,7 +358,7 @@ def plotPopulationFromState(
     model = exp.pmap.model
     if model.lindbladian:
         result = exp.solve_lindblad_ode(init_state, sequence)
-        rhos = result["rho"]
+        rhos = result["states"]
         ts = result["ts"]
         pops = []
         for rho in rhos:
@@ -374,7 +373,7 @@ def plotPopulationFromState(
         plt.tight_layout()
     else:
         result = exp.solve_stochastic_ode(init_state, sequence, Num_shots)
-        psis = result["psi"]
+        psis = result["states"]
         ts = result["ts"]
         pops = []
         for i in range(Num_shots):
@@ -396,8 +395,58 @@ def plotPopulationFromState(
     
 plotPopulationFromState(exp, init_state, sequence, Num_shots=1)
 # %%
+"""
 exp.set_prop_method("pwc")
 exp.compute_propagators()
 sequence = ["swap_10_20[0, 1]"]
 plotPopulation(exp, init_state, sequence, usePlotly=False)
+"""
+# %%
+
+print("Optimization with states")
+
+parameter_map.set_opt_map([
+    [("swap_10_20[0, 1]", "dQ", "carrier", "freq")],
+    [("swap_10_20[0, 1]", "dQ", "swap_pulse", "amp")],
+    [("swap_10_20[0, 1]", "dQ", "swap_pulse", "t_up")],
+    [("swap_10_20[0, 1]", "dQ", "swap_pulse", "t_down")],
+    [("swap_10_20[0, 1]", "dQ", "swap_pulse", "risefall")],
+    [("swap_10_20[0, 1]", "dQ", "swap_pulse", "xy_angle")],
+    [("swap_10_20[0, 1]", "dQ", "swap_pulse", "freq_offset")],
+    [("swap_10_20[0, 1]", "dQ", "swap_pulse", "delta")],
+])
+
+parameter_map.print_parameters()
+
+# %%
+psi_ref = [[0] * model.tot_dim]
+ref_state_index = model.get_state_indeces([(2,0)])[0]
+psi_ref[0][ref_state_index] = 1
+ref_state = tf.transpose(tf.constant(psi_ref, tf.complex128))
+if model.lindbladian:
+    ref_state = tf_utils.tf_state_to_dm(ref_state)
+
+
+opt = OptimalControl(
+    dir_path="./output/",
+    fid_func=fidelities.state_transfer_from_states,
+    fid_subspace=["Q", "R"],
+    pmap=parameter_map,
+    algorithm=algorithms.lbfgs,
+    run_name="Test_ode",
+    states_solver=True,
+    init_state=init_state,
+    sequence=sequence,
+    fid_func_kwargs={"params":{"psi_0": ref_state}}
+)
+exp.set_opt_gates(["swap_10_20[0, 1]"])
+opt.set_exp(exp)
+# %%
+tf.config.run_functions_eagerly(True)
+opt.optimize_controls()
+print(opt.current_best_goal)
+print(parameter_map.print_parameters())
+# %%
+plotPopulationFromState(exp, init_state, sequence, Num_shots=1)
+
 # %%
