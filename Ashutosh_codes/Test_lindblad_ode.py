@@ -344,10 +344,11 @@ if model.lindbladian:
 
 sequence = ["swap_10_20[0, 1]"]
 #Num_shots = 10
-#result = exp.solve_lindblad_ode(init_state, sequence)
-#rhos = result["states"]
-#ts = result["ts"]
+result = exp.solve_lindblad_ode(init_state, sequence)
+rhos = result["states"]
+ts = result["ts"]
 # %%
+
 def plotPopulationFromState(
     exp: Experiment,
     init_state: tf.Tensor,
@@ -394,6 +395,7 @@ def plotPopulationFromState(
             plt.tight_layout()
     
 plotPopulationFromState(exp, init_state, sequence, Num_shots=1)
+
 # %%
 """
 exp.set_prop_method("pwc")
