@@ -332,19 +332,18 @@ exp = Exp(pmap=parameter_map, sim_res=sim_res)
 #print(unitaries)
 # %%
 exp.set_opt_gates(["swap_10_20[0, 1]"])#, "swap_20_01[0, 1]"])
-model.set_lindbladian(False)
-#tf.config.run_functions_eagerly(True)
-psi_init = [[0] * model.tot_dim]
-init_state_index = model.get_state_indeces([(1,0)])[0]
-psi_init[0][init_state_index] = 1
-init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
-if model.lindbladian:
-    init_state = tf_utils.tf_state_to_dm(init_state)
 
+#model.set_lindbladian(True)
+#psi_init = [[0] * model.tot_dim]
+#init_state_index = model.get_state_indeces([(1,0)])[0]
+#psi_init[0][init_state_index] = 1
+#init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
+#if model.lindbladian:
+#    init_state = tf_utils.tf_state_to_dm(init_state)
+#sequence = ["swap_10_20[0, 1]"]
 
-sequence = ["swap_10_20[0, 1]"]
 #Num_shots = 1
-#result = exp.solve_stochastic_ode(init_state, sequence, Num_shots)
+#result = exp.solve_stochastic_ode(init_state, sequence, Num_shots, enable_vec_map=False)
 #rhos = result["states"]
 #ts = result["ts"]
 # %%
@@ -405,7 +404,16 @@ def plotPopulationFromState(
                     bbox_to_anchor=(1.05, 1.0),
                     loc="upper left")
                 plt.tight_layout()
-    
+
+
+model.set_lindbladian(True)
+psi_init = [[0] * model.tot_dim]
+init_state_index = model.get_state_indeces([(1,0)])[0]
+psi_init[0][init_state_index] = 1
+init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
+if model.lindbladian:
+    init_state = tf_utils.tf_state_to_dm(init_state)
+sequence = ["swap_10_20[0, 1]"]
 plotPopulationFromState(exp, init_state, sequence, Num_shots=5, plot_avg=True)
 
 # %%
