@@ -38,7 +38,7 @@ from matplotlib import cm
 qubit_levels = 4
 qubit_frequency = 7.86e9
 qubit_anharm = -264e6
-qubit_t1 = 10e-6#27e-6
+qubit_t1 = 10e-9#27e-6
 qubit_t2star = 39e-6
 qubit_temp = 50e-3
 
@@ -55,7 +55,7 @@ qubit = chip.Qubit(
 
 resonator_levels = 4
 resonator_frequency = 6.02e9
-resonator_t1 = 10e-6#27e-6
+resonator_t1 = 10e-9#27e-6
 resonator_t2star = 39e-6
 resonator_temp = 50e-3
 
@@ -114,7 +114,7 @@ model.set_dressed(False)
 #%%
 
 # TODO - Check if 10e9 simulation resolution introduce too many errors?
-sim_res = 100e9#500e9
+sim_res = 500e9#500e9
 awg_res = 2e9
 v2hz = 1e9
 
@@ -332,7 +332,7 @@ exp = Exp(pmap=parameter_map, sim_res=sim_res)
 #print(unitaries)
 # %%
 exp.set_opt_gates(["swap_10_20[0, 1]"])#, "swap_20_01[0, 1]"])
-model.set_lindbladian(True)
+model.set_lindbladian(False)
 #tf.config.run_functions_eagerly(True)
 psi_init = [[0] * model.tot_dim]
 init_state_index = model.get_state_indeces([(1,0)])[0]
@@ -343,17 +343,18 @@ if model.lindbladian:
 
 
 sequence = ["swap_10_20[0, 1]"]
-#Num_shots = 10
-result = exp.solve_lindblad_ode(init_state, sequence)
-rhos = result["states"]
-ts = result["ts"]
+#Num_shots = 1
+#result = exp.solve_stochastic_ode(init_state, sequence, Num_shots)
+#rhos = result["states"]
+#ts = result["ts"]
 # %%
 
 def plotPopulationFromState(
     exp: Experiment,
     init_state: tf.Tensor,
     sequence: List[str],
-    Num_shots = 1
+    Num_shots = 1,
+    plot_avg = False
 ):
 
     model = exp.pmap.model
@@ -384,17 +385,28 @@ def plotPopulationFromState(
                 pops_shots.append(tf.reshape(pop_t, pop_t.shape[:-1]))
             pops.append(pops_shots)
 
-        plt.figure(figsize=[10,5])
-        for i in range(len(pops)):
-            plt.plot(ts, pops[i])
+        if plot_avg:
+            plt.figure(figsize=[10,5])
+            plt.plot(ts, tf.reduce_mean(pops, axis=0))
             plt.legend(
-                model.state_labels,
-                ncol=int(np.ceil(model.tot_dim / 15)),
-                bbox_to_anchor=(1.05, 1.0),
-                loc="upper left")
+                    model.state_labels,
+                    ncol=int(np.ceil(model.tot_dim / 15)),
+                    bbox_to_anchor=(1.05, 1.0),
+                    loc="upper left")
             plt.tight_layout()
+
+        else:
+            plt.figure(figsize=[10,5])
+            for i in range(len(pops)):
+                plt.plot(ts, pops[i])
+                plt.legend(
+                    model.state_labels,
+                    ncol=int(np.ceil(model.tot_dim / 15)),
+                    bbox_to_anchor=(1.05, 1.0),
+                    loc="upper left")
+                plt.tight_layout()
     
-plotPopulationFromState(exp, init_state, sequence, Num_shots=1)
+plotPopulationFromState(exp, init_state, sequence, Num_shots=5, plot_avg=True)
 
 # %%
 """
