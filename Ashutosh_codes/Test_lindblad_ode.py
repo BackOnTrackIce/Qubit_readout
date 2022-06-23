@@ -55,7 +55,7 @@ qubit = chip.Qubit(
 
 resonator_levels = 4
 resonator_frequency = 6.02e9
-resonator_t1 = 10e-9#27e-6
+resonator_t1 = 10e-6#27e-6
 resonator_t2star = 39e-6
 resonator_temp = 50e-3
 
@@ -114,7 +114,7 @@ model.set_dressed(False)
 #%%
 
 # TODO - Check if 10e9 simulation resolution introduce too many errors?
-sim_res = 500e9#500e9
+sim_res = 100e9#500e9
 awg_res = 2e9
 v2hz = 1e9
 
@@ -333,19 +333,18 @@ exp = Exp(pmap=parameter_map, sim_res=sim_res)
 # %%
 exp.set_opt_gates(["swap_10_20[0, 1]"])#, "swap_20_01[0, 1]"])
 
-#model.set_lindbladian(True)
-#psi_init = [[0] * model.tot_dim]
-#init_state_index = model.get_state_indeces([(1,0)])[0]
-#psi_init[0][init_state_index] = 1
-#init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
-#if model.lindbladian:
-#    init_state = tf_utils.tf_state_to_dm(init_state)
-#sequence = ["swap_10_20[0, 1]"]
-
-#Num_shots = 1
-#result = exp.solve_stochastic_ode(init_state, sequence, Num_shots, enable_vec_map=False)
-#rhos = result["states"]
-#ts = result["ts"]
+model.set_lindbladian(False)
+psi_init = [[0] * model.tot_dim]
+init_state_index = model.get_state_indeces([(1,0)])[0]
+psi_init[0][init_state_index] = 1
+init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
+if model.lindbladian:
+    init_state = tf_utils.tf_state_to_dm(init_state)
+sequence = ["swap_10_20[0, 1]"]
+Num_shots = 2
+result = exp.solve_stochastic_ode(init_state, sequence, Num_shots, enable_vec_map=False)
+rhos = result["states"]
+ts = result["ts"]
 # %%
 
 def plotPopulationFromState(
@@ -353,7 +352,8 @@ def plotPopulationFromState(
     init_state: tf.Tensor,
     sequence: List[str],
     Num_shots = 1,
-    plot_avg = False
+    plot_avg = False,
+    enable_vec_map=False
 ):
 
     model = exp.pmap.model
@@ -373,7 +373,12 @@ def plotPopulationFromState(
             loc="upper left")
         plt.tight_layout()
     else:
-        result = exp.solve_stochastic_ode(init_state, sequence, Num_shots)
+        result = exp.solve_stochastic_ode(
+                init_state, 
+                sequence, 
+                Num_shots, 
+                enable_vec_map=enable_vec_map
+        )
         psis = result["states"]
         ts = result["ts"]
         pops = []
@@ -385,28 +390,50 @@ def plotPopulationFromState(
             pops.append(pops_shots)
 
         if plot_avg:
-            plt.figure(figsize=[10,5])
-            plt.plot(ts, tf.reduce_mean(pops, axis=0))
-            plt.legend(
-                    model.state_labels,
-                    ncol=int(np.ceil(model.tot_dim / 15)),
-                    bbox_to_anchor=(1.05, 1.0),
-                    loc="upper left")
-            plt.tight_layout()
-
-        else:
-            plt.figure(figsize=[10,5])
-            for i in range(len(pops)):
-                plt.plot(ts, pops[i])
+            if enable_vec_map:
+                plt.figure(figsize=[10,5])
+                plt.plot(ts[0], tf.reduce_mean(pops, axis=0))
                 plt.legend(
-                    model.state_labels,
-                    ncol=int(np.ceil(model.tot_dim / 15)),
-                    bbox_to_anchor=(1.05, 1.0),
-                    loc="upper left")
+                        model.state_labels,
+                        ncol=int(np.ceil(model.tot_dim / 15)),
+                        bbox_to_anchor=(1.05, 1.0),
+                        loc="upper left")
+                plt.tight_layout()
+            else:    
+                plt.figure(figsize=[10,5])
+                plt.plot(ts, tf.reduce_mean(pops, axis=0))
+                plt.legend(
+                        model.state_labels,
+                        ncol=int(np.ceil(model.tot_dim / 15)),
+                        bbox_to_anchor=(1.05, 1.0),
+                        loc="upper left")
                 plt.tight_layout()
 
+        else:
+            if enable_vec_map:
+                plt.figure(figsize=[10,5])
+                for i in range(len(pops)):
+                    plt.plot(ts[0], pops[i])
+                    plt.legend(
+                        model.state_labels,
+                        ncol=int(np.ceil(model.tot_dim / 15)),
+                        bbox_to_anchor=(1.05, 1.0),
+                        loc="upper left")
+                    plt.tight_layout()
 
-model.set_lindbladian(True)
+            else:
+                plt.figure(figsize=[10,5])
+                for i in range(len(pops)):
+                    plt.plot(ts, pops[i])
+                    plt.legend(
+                        model.state_labels,
+                        ncol=int(np.ceil(model.tot_dim / 15)),
+                        bbox_to_anchor=(1.05, 1.0),
+                        loc="upper left")
+                    plt.tight_layout()
+
+
+model.set_lindbladian(False)
 psi_init = [[0] * model.tot_dim]
 init_state_index = model.get_state_indeces([(1,0)])[0]
 psi_init[0][init_state_index] = 1
@@ -414,7 +441,7 @@ init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
 sequence = ["swap_10_20[0, 1]"]
-plotPopulationFromState(exp, init_state, sequence, Num_shots=5, plot_avg=True)
+plotPopulationFromState(exp, init_state, sequence, Num_shots=100, plot_avg=True, enable_vec_map=False)
 
 # %%
 """
