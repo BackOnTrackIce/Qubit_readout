@@ -341,12 +341,36 @@ init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
 sequence = ["swap_10_20[0, 1]"]
-Num_shots = 2
-result = exp.solve_stochastic_ode(init_state, sequence, Num_shots, enable_vec_map=False)
+Num_shots = 1000
+result = exp.solve_stochastic_ode(init_state, sequence, Num_shots, enable_vec_map=True)
 rhos = result["states"]
 ts = result["ts"]
 # %%
 
+@tf.function
+def calculatePopFromShots(psis, Num_shots):
+    pops = tf.TensorArray(
+        tf.double,
+        size=Num_shots,
+        dynamic_size=False, 
+        infer_shape=False
+    )
+    for i in tf.range(Num_shots):
+        pops_shots = tf.TensorArray(
+            tf.double,
+            size=psis.shape[1],
+            dynamic_size=False, 
+            infer_shape=False
+        )
+        counter = 0
+        for psi in psis[i]:
+            pop_t = tf.abs(psi)**2
+            pops_shots = pops_shots.write(counter, tf.reshape(pop_t, pop_t.shape[:-1]))
+            counter += 1
+        pops = pops.write(i, pops_shots.stack())
+    return pops.stack()
+
+#%%
 def plotPopulationFromState(
     exp: Experiment,
     init_state: tf.Tensor,
@@ -381,13 +405,7 @@ def plotPopulationFromState(
         )
         psis = result["states"]
         ts = result["ts"]
-        pops = []
-        for i in range(Num_shots):
-            pops_shots = []
-            for psi in psis[i]:
-                pop_t = tf.abs(psi)**2
-                pops_shots.append(tf.reshape(pop_t, pop_t.shape[:-1]))
-            pops.append(pops_shots)
+        pops = calculatePopFromShots(psis, Num_shots)
 
         if plot_avg:
             if enable_vec_map:
@@ -441,7 +459,14 @@ init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
 sequence = ["swap_10_20[0, 1]"]
-plotPopulationFromState(exp, init_state, sequence, Num_shots=100, plot_avg=True, enable_vec_map=False)
+plotPopulationFromState(
+                    exp, 
+                    init_state, 
+                    sequence, 
+                    Num_shots=100, 
+                    plot_avg=True, 
+                    enable_vec_map=True
+)
 
 # %%
 """
