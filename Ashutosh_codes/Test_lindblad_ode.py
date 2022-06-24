@@ -114,7 +114,7 @@ model.set_dressed(False)
 #%%
 
 # TODO - Check if 10e9 simulation resolution introduce too many errors?
-sim_res = 100e9#500e9
+sim_res = 500e9#500e9
 awg_res = 2e9
 v2hz = 1e9
 
@@ -341,10 +341,10 @@ init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
 sequence = ["swap_10_20[0, 1]"]
-Num_shots = 1000
-result = exp.solve_stochastic_ode(init_state, sequence, Num_shots, enable_vec_map=True)
-rhos = result["states"]
-ts = result["ts"]
+Num_shots = 2
+#result = exp.solve_stochastic_ode(init_state, sequence, Num_shots, enable_vec_map=True)
+#rhos = result["states"]
+#ts = result["ts"]
 # %%
 
 @tf.function
@@ -377,7 +377,8 @@ def plotPopulationFromState(
     sequence: List[str],
     Num_shots = 1,
     plot_avg = False,
-    enable_vec_map=False
+    enable_vec_map=False,
+    batch_size=None
 ):
 
     model = exp.pmap.model
@@ -401,7 +402,8 @@ def plotPopulationFromState(
                 init_state, 
                 sequence, 
                 Num_shots, 
-                enable_vec_map=enable_vec_map
+                enable_vec_map=enable_vec_map,
+                batch_size=batch_size
         )
         psis = result["states"]
         ts = result["ts"]
@@ -463,9 +465,10 @@ plotPopulationFromState(
                     exp, 
                     init_state, 
                     sequence, 
-                    Num_shots=100, 
+                    Num_shots=1000, 
                     plot_avg=True, 
-                    enable_vec_map=True
+                    enable_vec_map=True,
+                    batch_size=100
 )
 
 # %%
