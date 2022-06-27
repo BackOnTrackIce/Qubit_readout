@@ -325,6 +325,70 @@ swap_gate_20_01.add_component(carriers_2[1], "dR")
 
 
 gates_arr.append(swap_gate_20_01)
+
+Delta_1 = qubit_frequency - resonator_frequency
+Delta_2 = (2 + qubit_anharm)*qubit_frequency
+chi_0 = (coupling_strength**2)/Delta_1
+chi_1 = (coupling_strength**2)/(Delta_2 - Delta_1)
+
+carriers = createCarriers([resonator_frequency+sideband - chi_1/2, resonator_frequency+sideband - chi_1/2], sideband)
+
+t_readout = 50e-9
+t_total = 50e-9
+
+
+readout_params = {
+    "amp": Qty(value=2*np.pi*0.01,min_val=0.0,max_val=10.0,unit="V"),
+    "t_up": Qty(value=2e-9, min_val=0.0, max_val=t_readout, unit="s"),
+    "t_down": Qty(value=t_readout-2.0e-9, min_val=0.0, max_val=t_readout, unit="s"),
+    "risefall": Qty(value=1.0e-9, min_val=0.1e-9, max_val=t_readout/2, unit="s"),
+    "xy_angle": Qty(value=np.pi,min_val=-0.5 * np.pi,max_val=2.5 * np.pi,unit="rad"),
+    "freq_offset": Qty(value=-sideband - 3e6,min_val=-56 * 1e6,max_val=-52 * 1e6,unit="Hz 2pi"),
+    "delta": Qty(value=-1,min_val=-5,max_val=3,unit=""),
+    "t_final": Qty(value=t_total,min_val=0.1*t_total,max_val=1.5*t_total,unit="s")
+}
+
+readout_pulse = pulse.Envelope(
+    name="readout-pulse",
+    desc="Flattop pluse for SWAP gate",
+    params=readout_params,
+    shape=envelopes.flattop
+)
+
+
+tlist = np.linspace(0,t_total, 1000)
+
+
+nodrive_pulse = pulse.Envelope(
+    name="no_drive", 
+    params={
+        "t_final": Qty(
+            value=t_total,
+            min_val=0.5 * t_total,
+            max_val=1.5 * t_total,
+            unit="s"
+        )
+    },
+    shape=envelopes.no_drive
+)
+
+qubit_pulse = copy.deepcopy(readout_pulse)
+qubit_pulse.params["amp"] = Qty(value=2*np.pi*0,min_val=0.0,max_val=10.0,unit="V")
+qubit_pulse.params["xy_angle"] = Qty(value=0,min_val=-0.5 * np.pi,max_val=2.5 * np.pi,unit="rad")
+resonator_pulse = copy.deepcopy(readout_pulse)
+resonator_pulse.params["amp"] = Qty(value=2*np.pi*0.01,min_val=0.0,max_val=10.0,unit="V")
+resonator_pulse.params["xy_angle"] = Qty(value=-np.pi,min_val=-np.pi,max_val=2.5 * np.pi,unit="rad")
+
+Readout_gate = gates.Instruction(
+    name="Readout", targets=[1], t_start=0.0, t_end=t_total, channels=["dQ", "dR"]
+)
+Readout_gate.add_component(qubit_pulse, "dQ")
+Readout_gate.add_component(copy.deepcopy(carriers[0]), "dQ")
+Readout_gate.add_component(resonator_pulse, "dR")
+Readout_gate.add_component(copy.deepcopy(carriers[1]), "dR")
+
+gates_arr.append(Readout_gate)
+
 #%%
 parameter_map = PMap(instructions=gates_arr, model=model, generator=generator)
 exp = Exp(pmap=parameter_map, sim_res=sim_res)
@@ -453,26 +517,27 @@ def plotPopulationFromState(
                     plt.tight_layout()
 
 
-model.set_lindbladian(True)
+model.set_lindbladian(False)
 psi_init = [[0] * model.tot_dim]
 init_state_index = model.get_state_indeces([(1,0)])[0]
 psi_init[0][init_state_index] = 1
 init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
-sequence = ["swap_10_20[0, 1]"]
+sequence = ["Readout[1]"]#["swap_10_20[0, 1]"]
+
 plotPopulationFromState(
                     exp, 
                     init_state, 
                     sequence, 
-                    Num_shots=1000, 
+                    Num_shots=100, 
                     plot_avg=True, 
                     enable_vec_map=True,
-                    batch_size=100
+                    batch_size=20
 )
 
 # %%
-
+@tf.function
 def calculateIQFromShots(model, psis, Num_shots, freq_q, freq_r, t_final):
     IQ = tf.TensorArray(
         tf.complex128,
@@ -567,7 +632,7 @@ def plotIQFromShots(
     Q2 = tf.math.real(IQ2)
     I2 = tf.math.imag(IQ2)
     
-    plt.figure(dpi=150)
+    plt.figure(dpi=100)
     plt.scatter(Q1, I1, label="Ground state")
     plt.scatter(Q2, I2, label="Excited state")
     plt.xlabel("Q")
@@ -594,13 +659,11 @@ if model.lindbladian:
     init_state2 = tf_utils.tf_state_to_dm(init_state2)
 
 
-sequence = ["swap_10_20[0, 1]"]
+sequence = ["Readout[1]"]
 
 freq_q = resonator_frequency
 freq_r = resonator_frequency
-t_final = tswap_10_20
-
-Num_shots = 100
+t_final = t_readout
 
 
 plotIQFromShots(
@@ -611,9 +674,9 @@ plotIQFromShots(
     freq_q=freq_q,
     freq_r=freq_r,
     t_final=t_final,
-    Num_shots=Num_shots,
+    Num_shots=100,
     enable_vec_map=True,
-    batch_size=None
+    batch_size=25
 )
 
 
