@@ -453,7 +453,7 @@ def plotPopulationFromState(
                     plt.tight_layout()
 
 
-model.set_lindbladian(False)
+model.set_lindbladian(True)
 psi_init = [[0] * model.tot_dim]
 init_state_index = model.get_state_indeces([(1,0)])[0]
 psi_init[0][init_state_index] = 1
@@ -472,6 +472,152 @@ plotPopulationFromState(
 )
 
 # %%
+
+def calculateIQFromShots(model, psis, Num_shots, freq_q, freq_r, t_final):
+    IQ = tf.TensorArray(
+        tf.complex128,
+        size=Num_shots,
+        dynamic_size=False, 
+        infer_shape=False
+    )
+
+    ar = tf.convert_to_tensor(model.ann_opers[1], dtype=tf.complex128)
+    aq = tf.convert_to_tensor(model.ann_opers[0], dtype=tf.complex128)
+
+    Nr = tf.matmul(tf.transpose(ar, conjugate=True), ar)
+    Nq = tf.matmul(tf.transpose(aq, conjugate=True), aq)
+
+    pi = tf.constant(math.pi, dtype=tf.complex128)
+    U = tf.linalg.expm(1j*2*pi*(freq_r*Nr + freq_q*Nq)*t_final)
+
+    for i in tf.range(Num_shots):
+        psi_transformed = tf.matmul(U, psis[i][-1])
+
+        expect = tf.matmul(
+                    tf.matmul(
+                        tf.transpose(psi_transformed, conjugate=True),
+                        ar
+                    ),
+                    psi_transformed
+        )[0,0]
+
+        IQ = IQ.write(i, expect)
+
+    return IQ.stack()
+
+#%%
+
+def plotIQFromShots(
+    exp: Experiment,
+    init_state1: tf.Tensor,
+    init_state2: tf.Tensor,
+    sequence: List[str],
+    freq_q: tf.Tensor,
+    freq_r: tf.Tensor,
+    t_final: tf.Tensor,
+    Num_shots = 1,
+    enable_vec_map=False,
+    batch_size=None
+):
+    model = exp.pmap.model
+    
+    result1 = exp.solve_stochastic_ode(
+            init_state1, 
+            sequence, 
+            Num_shots, 
+            enable_vec_map=enable_vec_map,
+            batch_size=batch_size
+    )
+    psis1 = result1["states"]
+    ts = result1["ts"]
+
+    IQ1 = calculateIQFromShots(
+            model, 
+            psis1, 
+            Num_shots, 
+            freq_q, 
+            freq_r, 
+            t_final
+    )
+
+
+    result2 = exp.solve_stochastic_ode(
+            init_state2, 
+            sequence, 
+            Num_shots, 
+            enable_vec_map=enable_vec_map,
+            batch_size=batch_size
+    )
+    psis2 = result2["states"]
+    ts = result1["ts"]
+
+    IQ2 = calculateIQFromShots(
+            model, 
+            psis2, 
+            Num_shots, 
+            freq_q, 
+            freq_r, 
+            t_final
+    )
+
+    
+    Q1 = tf.math.real(IQ1)
+    I1 = tf.math.imag(IQ1)
+
+    Q2 = tf.math.real(IQ2)
+    I2 = tf.math.imag(IQ2)
+    
+    plt.figure(dpi=150)
+    plt.scatter(Q1, I1, label="Ground state")
+    plt.scatter(Q2, I2, label="Excited state")
+    plt.xlabel("Q")
+    plt.ylabel("I")
+    plt.legend()
+    plt.show()
+
+
+
+model.set_lindbladian(False)
+
+psi1_init = [[0] * model.tot_dim]
+init_state1_index = model.get_state_indeces([(0,0)])[0]
+psi1_init[0][init_state1_index] = 1
+init_state1 = tf.transpose(tf.constant(psi1_init, tf.complex128))
+if model.lindbladian:
+    init_state1 = tf_utils.tf_state_to_dm(init_state1)
+
+psi2_init = [[0] * model.tot_dim]
+init_state2_index = model.get_state_indeces([(1,0)])[0]
+psi2_init[0][init_state2_index] = 1
+init_state2 = tf.transpose(tf.constant(psi2_init, tf.complex128))
+if model.lindbladian:
+    init_state2 = tf_utils.tf_state_to_dm(init_state2)
+
+
+sequence = ["swap_10_20[0, 1]"]
+
+freq_q = resonator_frequency
+freq_r = resonator_frequency
+t_final = tswap_10_20
+
+Num_shots = 100
+
+
+plotIQFromShots(
+    exp=exp,
+    init_state1=init_state1,
+    init_state2=init_state2,
+    sequence=sequence,
+    freq_q=freq_q,
+    freq_r=freq_r,
+    t_final=t_final,
+    Num_shots=Num_shots,
+    enable_vec_map=True,
+    batch_size=None
+)
+
+
+#%%
 """
 exp.set_prop_method("pwc")
 exp.compute_propagators()

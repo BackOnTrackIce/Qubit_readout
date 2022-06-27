@@ -886,11 +886,37 @@ def plotPulseShapes(pmap, sequence, drive_channels, pulse_names, ts):
     plt.legend()
 
 
+@tf.function
+def calculatePopFromShots(psis, Num_shots):
+    pops = tf.TensorArray(
+        tf.double,
+        size=Num_shots,
+        dynamic_size=False, 
+        infer_shape=False
+    )
+    for i in tf.range(Num_shots):
+        pops_shots = tf.TensorArray(
+            tf.double,
+            size=psis.shape[1],
+            dynamic_size=False, 
+            infer_shape=False
+        )
+        counter = 0
+        for psi in psis[i]:
+            pop_t = tf.abs(psi)**2
+            pops_shots = pops_shots.write(counter, tf.reshape(pop_t, pop_t.shape[:-1]))
+            counter += 1
+        pops = pops.write(i, pops_shots.stack())
+    return pops.stack()
+
 def plotPopulationFromState(
     exp: Experiment,
     init_state: tf.Tensor,
     sequence: List[str],
-    Num_shots = 1
+    Num_shots = 1,
+    plot_avg = False,
+    enable_vec_map=False,
+    batch_size=None
 ):
 
     model = exp.pmap.model
@@ -910,23 +936,159 @@ def plotPopulationFromState(
             loc="upper left")
         plt.tight_layout()
     else:
-        result = exp.solve_stochastic_ode(init_state, sequence, Num_shots)
+        result = exp.solve_stochastic_ode(
+                init_state, 
+                sequence, 
+                Num_shots, 
+                enable_vec_map=enable_vec_map,
+                batch_size=batch_size
+        )
         psis = result["states"]
         ts = result["ts"]
-        pops = []
-        for i in range(Num_shots):
-            pops_shots = []
-            for psi in psis[i]:
-                pop_t = tf.abs(psi)**2
-                pops_shots.append(tf.reshape(pop_t, pop_t.shape[:-1]))
-            pops.append(pops_shots)
+        pops = calculatePopFromShots(psis, Num_shots)
 
-        plt.figure(figsize=[10,5])
-        for i in range(len(pops)):
-            plt.plot(ts, pops[i])
-            plt.legend(
-                model.state_labels,
-                ncol=int(np.ceil(model.tot_dim / 15)),
-                bbox_to_anchor=(1.05, 1.0),
-                loc="upper left")
-            plt.tight_layout()
+        if plot_avg:
+            if enable_vec_map:
+                plt.figure(figsize=[10,5])
+                plt.plot(ts[0], tf.reduce_mean(pops, axis=0))
+                plt.legend(
+                        model.state_labels,
+                        ncol=int(np.ceil(model.tot_dim / 15)),
+                        bbox_to_anchor=(1.05, 1.0),
+                        loc="upper left")
+                plt.tight_layout()
+            else:    
+                plt.figure(figsize=[10,5])
+                plt.plot(ts, tf.reduce_mean(pops, axis=0))
+                plt.legend(
+                        model.state_labels,
+                        ncol=int(np.ceil(model.tot_dim / 15)),
+                        bbox_to_anchor=(1.05, 1.0),
+                        loc="upper left")
+                plt.tight_layout()
+
+        else:
+            if enable_vec_map:
+                plt.figure(figsize=[10,5])
+                for i in range(len(pops)):
+                    plt.plot(ts[0], pops[i])
+                    plt.legend(
+                        model.state_labels,
+                        ncol=int(np.ceil(model.tot_dim / 15)),
+                        bbox_to_anchor=(1.05, 1.0),
+                        loc="upper left")
+                    plt.tight_layout()
+
+            else:
+                plt.figure(figsize=[10,5])
+                for i in range(len(pops)):
+                    plt.plot(ts, pops[i])
+                    plt.legend(
+                        model.state_labels,
+                        ncol=int(np.ceil(model.tot_dim / 15)),
+                        bbox_to_anchor=(1.05, 1.0),
+                        loc="upper left")
+                    plt.tight_layout()
+
+
+def calculateIQFromShots(model, psis, Num_shots, freq_q, freq_r, t_final):
+    IQ = tf.TensorArray(
+        tf.complex128,
+        size=Num_shots,
+        dynamic_size=False, 
+        infer_shape=False
+    )
+
+    ar = tf.convert_to_tensor(model.ann_opers[1], dtype=tf.complex128)
+    aq = tf.convert_to_tensor(model.ann_opers[0], dtype=tf.complex128)
+
+    Nr = tf.matmul(tf.transpose(ar, conjugate=True), ar)
+    Nq = tf.matmul(tf.transpose(aq, conjugate=True), aq)
+
+    pi = tf.constant(math.pi, dtype=tf.complex128)
+    U = tf.linalg.expm(1j*2*pi*(freq_r*Nr + freq_q*Nq)*t_final)
+
+    for i in tf.range(Num_shots):
+        psi_transformed = tf.matmul(U, psis[i][-1])
+
+        expect = tf.matmul(
+                    tf.matmul(
+                        tf.transpose(psi_transformed, conjugate=True),
+                        ar
+                    ),
+                    psi_transformed
+        )[0,0]
+
+        IQ = IQ.write(i, expect)
+
+    return IQ.stack()
+
+
+def plotIQFromShots(
+    exp: Experiment,
+    init_state1: tf.Tensor,
+    init_state2: tf.Tensor,
+    sequence: List[str],
+    freq_q: tf.Tensor,
+    freq_r: tf.Tensor,
+    t_final: tf.Tensor,
+    Num_shots = 1,
+    enable_vec_map=False,
+    batch_size=None
+):
+    model = exp.pmap.model
+    
+    result1 = exp.solve_stochastic_ode(
+            init_state1, 
+            sequence, 
+            Num_shots, 
+            enable_vec_map=enable_vec_map,
+            batch_size=batch_size
+    )
+    psis1 = result1["states"]
+    ts = result1["ts"]
+
+    IQ1 = calculateIQFromShots(
+            model, 
+            psis1, 
+            Num_shots, 
+            freq_q, 
+            freq_r, 
+            t_final
+    )
+
+
+    result2 = exp.solve_stochastic_ode(
+            init_state2, 
+            sequence, 
+            Num_shots, 
+            enable_vec_map=enable_vec_map,
+            batch_size=batch_size
+    )
+    psis2 = result2["states"]
+    ts = result1["ts"]
+
+    IQ2 = calculateIQFromShots(
+            model, 
+            psis2, 
+            Num_shots, 
+            freq_q, 
+            freq_r, 
+            t_final
+    )
+
+    
+    Q1 = tf.math.real(IQ1)
+    I1 = tf.math.imag(IQ1)
+
+    Q2 = tf.math.real(IQ2)
+    I2 = tf.math.imag(IQ2)
+    
+    plt.figure(dpi=150)
+    plt.scatter(Q1, I1, label="Ground state")
+    plt.scatter(Q2, I2, label="Excited state")
+    plt.xlabel("Q")
+    plt.ylabel("I")
+    plt.legend()
+    plt.show()
+
