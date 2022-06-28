@@ -405,12 +405,16 @@ init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
 sequence = ["swap_10_20[0, 1]"]
-Num_shots = 2
-#result = exp.solve_stochastic_ode(init_state, sequence, Num_shots, enable_vec_map=True)
+#Num_shots = 5
+#result = exp.solve_stochastic_ode(
+#            init_state, 
+#            sequence, 
+#            Num_shots, 
+#            enable_vec_map=True,
+#            batch_size=1)
 #rhos = result["states"]
 #ts = result["ts"]
 # %%
-
 @tf.function
 def calculatePopFromShots(psis, Num_shots):
     pops = tf.TensorArray(
@@ -433,7 +437,6 @@ def calculatePopFromShots(psis, Num_shots):
             counter += 1
         pops = pops.write(i, pops_shots.stack())
     return pops.stack()
-
 #%%
 def plotPopulationFromState(
     exp: Experiment,
@@ -533,9 +536,8 @@ plotPopulationFromState(
                     Num_shots=100, 
                     plot_avg=True, 
                     enable_vec_map=True,
-                    batch_size=20
+                    batch_size=25
 )
-
 # %%
 @tf.function
 def calculateIQFromShots(model, psis, Num_shots, freq_q, freq_r, t_final):
@@ -641,7 +643,6 @@ def plotIQFromShots(
     plt.show()
 
 
-
 model.set_lindbladian(False)
 
 psi1_init = [[0] * model.tot_dim]
@@ -674,19 +675,41 @@ plotIQFromShots(
     freq_q=freq_q,
     freq_r=freq_r,
     t_final=t_final,
-    Num_shots=100,
+    Num_shots=10,
     enable_vec_map=True,
-    batch_size=25
+    batch_size=2
 )
 
 
 #%%
-"""
+model.set_lindbladian(True)
+exp.set_opt_gates(["Readout[1]"])
 exp.set_prop_method("pwc")
 exp.compute_propagators()
-sequence = ["swap_10_20[0, 1]"]
+#%%
+psi_init = [[0] * model.tot_dim]
+init_state_index = model.get_state_indeces([(1,0)])[0]
+psi_init[0][init_state_index] = 1
+init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
+if model.lindbladian:
+    init_state = tf_utils.tf_state_to_dm(init_state)
+
+sequence = ["Readout[1]"]
 plotPopulation(exp, init_state, sequence, usePlotly=False)
-"""
+#%%
+plotIQ(
+        exp=exp, 
+        sequence=sequence, 
+        annihilation_operator=model.ann_opers[1], 
+        drive_freq_q=resonator_frequency, 
+        drive_freq_r=resonator_frequency,
+        t_total=t_readout,
+        spacing=100, 
+        usePlotly=False
+)
+
+
+
 # %%
 
 print("Optimization with states")
