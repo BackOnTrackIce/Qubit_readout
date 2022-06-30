@@ -39,7 +39,7 @@ from matplotlib import cm
 qubit_levels = 4
 qubit_frequency = 7.86e9
 qubit_anharm = -264e6
-qubit_t1 = 50e-9#27e-6
+qubit_t1 = 27e-6
 qubit_t2star = 39e-6
 qubit_temp = 50e-3
 
@@ -56,7 +56,7 @@ qubit = chip.Qubit(
 
 resonator_levels = 4
 resonator_frequency = 6.02e9
-resonator_t1 = 50e-6#27e-6
+resonator_t1 = 27e-6
 resonator_t2star = 39e-6
 resonator_temp = 50e-3
 
@@ -390,6 +390,17 @@ Readout_gate.add_component(copy.deepcopy(carriers[1]), "dR")
 
 gates_arr.append(Readout_gate)
 
+
+nodrive_gate = gates.Instruction(
+    name="NoDrive", targets=[0, 1], t_start=0.0, t_end=t_total, channels=["dQ", "dR"]
+)
+nodrive_gate.add_component(nodrive_pulse, "dQ")
+nodrive_gate.add_component(copy.deepcopy(carriers[0]), "dQ")
+nodrive_gate.add_component(nodrive_pulse, "dR")
+nodrive_gate.add_component(copy.deepcopy(carriers[1]), "dR")
+
+gates_arr.append(nodrive_gate)
+
 #%%
 parameter_map = PMap(instructions=gates_arr, model=model, generator=generator)
 exp = Exp(pmap=parameter_map, sim_res=sim_res)
@@ -521,23 +532,23 @@ def plotPopulationFromState(
                     plt.tight_layout()
 
 
-model.set_lindbladian(True)
+model.set_lindbladian(False)
 psi_init = [[0] * model.tot_dim]
-init_state_index = model.get_state_indeces([(1,0)])[0]
+init_state_index = model.get_state_indeces([(2,0)])[0]
 psi_init[0][init_state_index] = 1
 init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
-sequence = ["Readout[1]"]#["swap_10_20[0, 1]"]
+sequence = ["NoDrive[0, 1]"]#["Readout[1]"]#["swap_10_20[0, 1]"]
 
 plotPopulationFromState(
                     exp, 
                     init_state, 
                     sequence, 
-                    Num_shots=100, 
+                    Num_shots=1, 
                     plot_avg=True, 
                     enable_vec_map=True,
-                    batch_size=25
+                    batch_size=None
 )
 # %%
 @tf.function
@@ -560,7 +571,7 @@ def calculateIQFromShots(model, psis, Num_shots, freq_q, freq_r, t_final):
     U = tf.expand_dims(U, axis=0)
     ar = tf.expand_dims(ar, axis=0)
     for i in tf.range(Num_shots):
-        psi_transformed = tf.matmul(U, psis[i][::1000])
+        psi_transformed = tf.matmul(U, psis[i][::100])
         expect =tf.matmul(
                     tf.transpose(psi_transformed, conjugate=True, perm=[0,2,1]),
                     tf.matmul(ar, psi_transformed)
@@ -827,4 +838,100 @@ plotPopulationFromState(exp, init_state, sequence, Num_shots=1)
 # %%
 parameter_map.print_parameters()
 
+# %%
+model.set_lindbladian(True)
+exp.set_opt_gates(["Readout[1]"])
+exp.set_prop_method("pwc")
+exp.compute_propagators()
+#%%
+psi_init = [[0] * model.tot_dim]
+init_state_index = model.get_state_indeces([(1,0)])[0]
+psi_init[0][init_state_index] = 1
+init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
+if model.lindbladian:
+    init_state = tf_utils.tf_state_to_dm(init_state)
+
+sequence = ["Readout[1]"]
+plotPopulation(exp, init_state, sequence, usePlotly=False)
+
+#%%
+plotIQ(
+        exp=exp, 
+        sequence=sequence, 
+        annihilation_operator=model.ann_opers[1], 
+        drive_freq_q=0,#resonator_frequency-2.555*sideband, 
+        drive_freq_r=0,#resonator_frequency-2.615*sideband,
+        t_total=t_readout,
+        spacing=100, 
+        usePlotly=False
+)
+# %%
+model.set_lindbladian(False)
+psi1_init = [[0] * model.tot_dim]
+init_state1_index = model.get_state_indeces([(0,0)])[0]
+psi1_init[0][init_state1_index] = 1
+init_state1 = tf.transpose(tf.constant(psi1_init, tf.complex128))
+if model.lindbladian:
+    init_state1 = tf_utils.tf_state_to_dm(init_state1)
+
+psi2_init = [[0] * model.tot_dim]
+init_state2_index = model.get_state_indeces([(1,0)])[0]
+psi2_init[0][init_state2_index] = 1
+init_state2 = tf.transpose(tf.constant(psi2_init, tf.complex128))
+if model.lindbladian:
+    init_state2 = tf_utils.tf_state_to_dm(init_state2)
+
+sequence = ["Readout[1]"]
+freq_q = resonator_frequency - 2.5*sideband
+freq_r = resonator_frequency - 2.5*sideband
+t_final = t_readout
+
+plotIQFromShots(
+    exp=exp,
+    init_state1=init_state1,
+    init_state2=init_state2,
+    sequence=sequence,
+    freq_q=0, #freq_q,
+    freq_r=0, #freq_r,
+    t_final=t_final,
+    Num_shots=10,
+    enable_vec_map=True,
+    batch_size=None
+)
+
+# %%
+
+# Testing probability distribution
+
+Num_shots = 1000
+
+res = generator.devices["LO"].resolution
+instructions = parameter_map.instructions
+ts_len ={}
+for gate in sequence:
+    try:
+        instr = instructions[gate]
+    except KeyError:
+        raise Exception(
+            f"C3:Error: Gate '{gate}' is not defined."
+            f" Available gates are:\n {list(instructions.keys())}."
+        )
+
+    ts_len[gate] = int(instr.t_end * res)
+dt = 1/res
+plist_list = []
+for i in range(Num_shots):
+    counter = 0
+    for gate in sequence:
+        plist = exp.precompute_dissipation_probs(model, ts_len[gate], dt)
+        if counter == 0:
+            plist_list.append(plist)
+        else:
+            plist_list[-1] = tf.concat([plist_list[-1], plist], 2)
+        counter += 1
+
+plist_list = tf.convert_to_tensor(plist_list, dtype=tf.complex128)
+
+# %%
+plt.hist(tf.cast(tf.math.real(tf.reduce_sum(plist_list, axis=3)[:, 0, 0]), dtype=tf.int32), bins=[0,1,2,3,4,5,6,7,8,9,10,11,12,13, 14])
 # %%
