@@ -54,7 +54,7 @@ qubit = chip.Qubit(
     temp=Qty(value=qubit_temp,min_val=0.0,max_val=0.12,unit='K')
 )
 
-resonator_levels = 4
+resonator_levels = 10
 resonator_frequency = 6.02e9
 resonator_t1 = 27e-6
 resonator_t2star = 39e-6
@@ -465,7 +465,8 @@ def plotPopulationFromState(
 
     model = exp.pmap.model
     if model.lindbladian:
-        result = exp.solve_lindblad_ode(init_state, sequence)
+        solve_lindblad_ode_tf = tf.function(exp.solve_lindblad_ode)
+        result = solve_lindblad_ode_tf(init_state, sequence)
         rhos = result["states"]
         ts = result["ts"]
         pops = []
@@ -535,14 +536,16 @@ def plotPopulationFromState(
                     plt.tight_layout()
 
 
-model.set_lindbladian(False)
+parameter_map.load_values("readout_optimization_best_point_open_loop.c3log")
+
+model.set_lindbladian(True)
 psi_init = [[0] * model.tot_dim]
 init_state_index = model.get_state_indeces([(2,0)])[0]
 psi_init[0][init_state_index] = 1
 init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
-sequence = ["NoDrive[0, 1]"]#["Readout[1]"]#["swap_10_20[0, 1]"]
+sequence = ["Readout[1]"]#["NoDrive[0, 1]"]#["Readout[1]"]#["swap_10_20[0, 1]"]
 
 plotPopulationFromState(
                     exp, 
@@ -555,7 +558,7 @@ plotPopulationFromState(
 )
 #%%
 @tf.function
-def calculateIQFromDM(model, psis, freq_q, freq_r, t_final, spacing=100):
+def calculateIQFromStates(model, psis, freq_q, freq_r, t_final, spacing=100):
     ar = tf.convert_to_tensor(model.ann_opers[1], dtype=tf.complex128)
     aq = tf.convert_to_tensor(model.ann_opers[0], dtype=tf.complex128)
 
@@ -564,11 +567,9 @@ def calculateIQFromDM(model, psis, freq_q, freq_r, t_final, spacing=100):
 
     pi = tf.constant(math.pi, dtype=tf.complex128)
     U = tf.linalg.expm(1j*2*pi*(freq_r*Nr + freq_q*Nq)*t_final)
-    U = tf.expand_dims(U, axis=0)
-    ar = tf.expand_dims(ar, axis=0)
     psi_transformed = tf.matmul(
-                            tf.transpose(U, conjugate=True, perm=[0,2,1]),
-                            tf.matmul(psis[i][::spacing], U)
+                            tf.transpose(U, conjugate=True),
+                            tf.matmul(psis[::spacing], U)
     )
     expect = tf.linalg.trace(tf.matmul(psi_transformed, ar))
 
@@ -576,7 +577,7 @@ def calculateIQFromDM(model, psis, freq_q, freq_r, t_final, spacing=100):
 
 #%%
 
-def plotIQFromDM(
+def plotIQFromStates(
     exp: Experiment,
     init_state1: tf.Tensor,
     init_state2: tf.Tensor,
@@ -584,38 +585,42 @@ def plotIQFromDM(
     freq_q: tf.Tensor,
     freq_r: tf.Tensor,
     t_final: tf.Tensor,
+    spacing=100
 ):
     model = exp.pmap.model
     
-    result1 = exp.solve_lindblad_ode(
+    solve_lindbald_ode_tf = tf.function(exp.solve_lindblad_ode)
+    result1 = solve_lindbald_ode_tf(
             init_state1, 
             sequence 
     )
     psis1 = result1["states"]
     ts = result1["ts"]
 
-    IQ1 = calculateIQFromShots(
+    IQ1 = calculateIQFromStates(
             model, 
             psis1, 
             freq_q, 
             freq_r, 
-            t_final
+            t_final,
+            spacing
     )
 
 
-    result2 = exp.solve_lindblad_ode(
+    result2 = solve_lindbald_ode_tf(
             init_state2, 
             sequence 
     )
     psis2 = result2["states"]
     ts = result1["ts"]
 
-    IQ2 = calculateIQFromDM(
+    IQ2 = calculateIQFromStates(
             model, 
             psis2, 
             freq_q, 
             freq_r, 
-            t_final
+            t_final,
+            spacing
     )
 
     
@@ -634,6 +639,40 @@ def plotIQFromDM(
     plt.show()
 
 
+
+model.set_lindbladian(True)
+
+psi1_init = [[0] * model.tot_dim]
+init_state1_index = model.get_state_indeces([(0,0)])[0]
+psi1_init[0][init_state1_index] = 1
+init_state1 = tf.transpose(tf.constant(psi1_init, tf.complex128))
+if model.lindbladian:
+    init_state1 = tf_utils.tf_state_to_dm(init_state1)
+
+psi2_init = [[0] * model.tot_dim]
+init_state2_index = model.get_state_indeces([(1,0)])[0]
+psi2_init[0][init_state2_index] = 1
+init_state2 = tf.transpose(tf.constant(psi2_init, tf.complex128))
+if model.lindbladian:
+    init_state2 = tf_utils.tf_state_to_dm(init_state2)
+
+
+sequence = ["Readout[1]"]
+
+freq_q = resonator_frequency - 2.5*sideband
+freq_r = resonator_frequency - 2.5*sideband
+t_final = t_readout
+
+plotIQFromStates(
+    exp=exp,
+    init_state1=init_state1,
+    init_state2=init_state2,
+    sequence=sequence,
+    freq_q=freq_q,
+    freq_r=freq_r,
+    t_final=t_final,
+    spacing=1000
+)
 
 
 # %%

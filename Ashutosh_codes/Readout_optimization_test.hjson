@@ -1055,7 +1055,7 @@
             symbol: \alpha
           }
         }
-        hilbert_dim: 4
+        hilbert_dim: 10
       }
     }
     Couplings:
@@ -1116,7 +1116,7 @@
         inputs: 0
         outputs: 1
         params: {}
-        resolution: 100000000000.0
+        resolution: 500000000000.0
       }
       AWG:
       {
@@ -1134,7 +1134,7 @@
         inputs: 1
         outputs: 1
         params: {}
-        resolution: 100000000000.0
+        resolution: 500000000000.0
       }
       Response:
       {
@@ -1153,7 +1153,7 @@
             symbol: \alpha
           }
         }
-        resolution: 100000000000.0
+        resolution: 500000000000.0
       }
       Mixer:
       {
@@ -1231,5 +1231,5 @@
     overwrite_propagators: true
     stop_partial_propagator_gradient: true
   }
-  sim_res: 100000000000.0
+  sim_res: 500000000000.0
 }
