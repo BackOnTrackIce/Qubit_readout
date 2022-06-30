@@ -115,7 +115,7 @@ model.set_dressed(False)
 #%%
 
 # TODO - Check if 10e9 simulation resolution introduce too many errors?
-sim_res = 100e9#500e9
+sim_res = 500e9#500e9
 awg_res = 2e9
 v2hz = 1e9
 
@@ -374,7 +374,7 @@ nodrive_pulse = pulse.Envelope(
 )
 
 qubit_pulse = copy.deepcopy(readout_pulse)
-qubit_pulse.params["amp"] = Qty(value=2*np.pi*0,min_val=0.0,max_val=10.0,unit="V")
+qubit_pulse.params["amp"] = Qty(value=2*np.pi*0.01,min_val=0.0,max_val=10.0,unit="V")
 qubit_pulse.params["xy_angle"] = Qty(value=0,min_val=-0.5 * np.pi,max_val=2.5 * np.pi,unit="rad")
 resonator_pulse = copy.deepcopy(readout_pulse)
 resonator_pulse.params["amp"] = Qty(value=2*np.pi*0.01,min_val=0.0,max_val=10.0,unit="V")
@@ -409,7 +409,7 @@ exp = Exp(pmap=parameter_map, sim_res=sim_res)
 # %%
 exp.set_opt_gates(["swap_10_20[0, 1]"])#, "swap_20_01[0, 1]"])
 
-model.set_lindbladian(False)
+model.set_lindbladian(True)
 psi_init = [[0] * model.tot_dim]
 init_state_index = model.get_state_indeces([(1,0)])[0]
 psi_init[0][init_state_index] = 1
@@ -417,6 +417,9 @@ init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
 sequence = ["swap_10_20[0, 1]"]
+
+exp.write_config("Readout_optimization_test.hjson")
+
 #Num_shots = 5
 #result = exp.solve_stochastic_ode(
 #            init_state, 
@@ -550,6 +553,89 @@ plotPopulationFromState(
                     enable_vec_map=True,
                     batch_size=None
 )
+#%%
+@tf.function
+def calculateIQFromDM(model, psis, freq_q, freq_r, t_final, spacing=100):
+    ar = tf.convert_to_tensor(model.ann_opers[1], dtype=tf.complex128)
+    aq = tf.convert_to_tensor(model.ann_opers[0], dtype=tf.complex128)
+
+    Nr = tf.matmul(tf.transpose(ar, conjugate=True), ar)
+    Nq = tf.matmul(tf.transpose(aq, conjugate=True), aq)
+
+    pi = tf.constant(math.pi, dtype=tf.complex128)
+    U = tf.linalg.expm(1j*2*pi*(freq_r*Nr + freq_q*Nq)*t_final)
+    U = tf.expand_dims(U, axis=0)
+    ar = tf.expand_dims(ar, axis=0)
+    psi_transformed = tf.matmul(
+                            tf.transpose(U, conjugate=True, perm=[0,2,1]),
+                            tf.matmul(psis[i][::spacing], U)
+    )
+    expect = tf.linalg.trace(tf.matmul(psi_transformed, ar))
+
+    return expect
+
+#%%
+
+def plotIQFromDM(
+    exp: Experiment,
+    init_state1: tf.Tensor,
+    init_state2: tf.Tensor,
+    sequence: List[str],
+    freq_q: tf.Tensor,
+    freq_r: tf.Tensor,
+    t_final: tf.Tensor,
+):
+    model = exp.pmap.model
+    
+    result1 = exp.solve_lindblad_ode(
+            init_state1, 
+            sequence 
+    )
+    psis1 = result1["states"]
+    ts = result1["ts"]
+
+    IQ1 = calculateIQFromShots(
+            model, 
+            psis1, 
+            freq_q, 
+            freq_r, 
+            t_final
+    )
+
+
+    result2 = exp.solve_lindblad_ode(
+            init_state2, 
+            sequence 
+    )
+    psis2 = result2["states"]
+    ts = result1["ts"]
+
+    IQ2 = calculateIQFromDM(
+            model, 
+            psis2, 
+            freq_q, 
+            freq_r, 
+            t_final
+    )
+
+    
+    Q1 = tf.math.real(IQ1)
+    I1 = tf.math.imag(IQ1)
+
+    Q2 = tf.math.real(IQ2)
+    I2 = tf.math.imag(IQ2)
+    
+    plt.figure(dpi=100)
+    plt.plot(Q1, I1, label="Ground state" , marker = "o", linestyle="--")
+    plt.plot(Q2, I2, label="Excited state", marker = "o", linestyle="--")
+    plt.xlabel("Q")
+    plt.ylabel("I")
+    plt.legend()
+    plt.show()
+
+
+
+
 # %%
 @tf.function
 def calculateIQFromShots(model, psis, Num_shots, freq_q, freq_r, t_final):
@@ -934,4 +1020,59 @@ plist_list = tf.convert_to_tensor(plist_list, dtype=tf.complex128)
 
 # %%
 plt.hist(tf.cast(tf.math.real(tf.reduce_sum(plist_list, axis=3)[:, 0, 0]), dtype=tf.int32), bins=[0,1,2,3,4,5,6,7,8,9,10,11,12,13, 14])
+# %%
+
+# Plotting best point after optimization
+exp = Exp()
+exp.read_config("Readout_optimization_test.hjson")
+pmap = exp.pmap
+model = pmap.model
+model.set_lindbladian(True)
+pmap.load_values("readout_optimization_best_point_open_loop.c3log")
+exp.set_opt_gates(["Readout[1]"])
+#%%
+exp.set_prop_method("pwc")
+exp.compute_propagators()
+#%%
+psi_init = [[0] * model.tot_dim]
+init_state_index = model.get_state_indeces([(1,0)])[0]
+psi_init[0][init_state_index] = 1
+init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
+if model.lindbladian:
+    init_state = tf_utils.tf_state_to_dm(init_state)
+
+sequence = ["Readout[1]"]
+plotPopulation(exp, init_state, sequence, usePlotly=False)
+#%%
+plotIQ(
+        exp=exp, 
+        sequence=sequence, 
+        annihilation_operator=model.ann_opers[1], 
+        drive_freq_q=0,#resonator_frequency-2.555*sideband, 
+        drive_freq_r=0,#resonator_frequency-2.615*sideband,
+        t_total=t_readout,
+        spacing=100, 
+        usePlotly=False
+)
+# %%
+
+model.set_lindbladian(True)
+psi_init = [[0] * model.tot_dim]
+init_state_index = model.get_state_indeces([(1,0)])[0]
+psi_init[0][init_state_index] = 1
+init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
+if model.lindbladian:
+    init_state = tf_utils.tf_state_to_dm(init_state)
+sequence = ["Readout[1]"]#["NoDrive[0, 1]"]#["Readout[1]"]#["swap_10_20[0, 1]"]
+
+plotPopulationFromState(
+                    exp, 
+                    init_state, 
+                    sequence, 
+                    Num_shots=1, 
+                    plot_avg=True, 
+                    enable_vec_map=True,
+                    batch_size=None
+)
+
 # %%

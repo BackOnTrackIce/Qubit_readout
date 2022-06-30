@@ -579,7 +579,8 @@ opt = OptimalControl(
     fid_func=fidelities.swap_and_readout,
     fid_subspace=["Q", "R"],
     pmap=parameter_map,
-    algorithm=algorithms.cmaes,
+    algorithm=algorithms.lbfgs_grad_free,
+    options={"maxiters": 100},
     run_name="swap_and_readout",
     fid_func_kwargs={"params":fid_params}
 )
