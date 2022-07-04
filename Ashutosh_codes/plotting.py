@@ -1061,7 +1061,9 @@ def plotIQFromStates(
     t_final: tf.Tensor,
     spacing=100,
     connect_points=False,
-    filename=None
+    filename=None,
+    xlim=1.5,
+    ylim=1.5,
 ):
     model = exp.pmap.model
     
@@ -1116,6 +1118,8 @@ def plotIQFromStates(
     
     plt.xlabel("Q")
     plt.ylabel("I")
+    plt.xlim([-xlim, xlim])
+    plt.ylim([-ylim, ylim])
     plt.legend()
     plt.show()
     if filename != None:
@@ -1176,7 +1180,9 @@ def plotIQFromShots(
     Num_shots = 1,
     enable_vec_map=False,
     batch_size=None,
-    filename=None
+    filename=None,
+    xlim=1.5,
+    ylim=1.5,
 ):
     model = exp.pmap.model
     
@@ -1229,6 +1235,8 @@ def plotIQFromShots(
     plt.figure(dpi=100)
     plt.scatter(Q1, I1, label="Ground state")
     plt.scatter(Q2, I2, label="Excited state")
+    plt.xlim([-xlim, xlim])
+    plt.ylim([-ylim, ylim])
     plt.xlabel("Q")
     plt.ylabel("I")
     plt.legend()

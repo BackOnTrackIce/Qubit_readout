@@ -433,7 +433,8 @@ plotPopulationFromState(
                     plot_avg=True, 
                     enable_vec_map=False,
                     batch_size=None,
-                    states_to_plot=None
+                    states_to_plot=None,
+                    filename="./Plots_ode_solver/States_before_opt"
 )
 # %%
 model.set_lindbladian(True)
@@ -467,7 +468,8 @@ plotIQFromStates(
     freq_r=freq_r,
     t_final=t_final,
     spacing=1000,
-    connect_points=True
+    connect_points=True,
+    filename="./Plots_ode_solver/IQ_before_opt"
 )
 
 # %%
@@ -527,5 +529,7 @@ parameter_map.set_opt_map([
 
 parameter_map.print_parameters()
 
-
 # %%
+
+
+

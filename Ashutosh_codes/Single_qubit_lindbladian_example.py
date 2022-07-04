@@ -1,5 +1,4 @@
 #%%
-from ast import Num
 import os
 from re import I
 import numpy as np
