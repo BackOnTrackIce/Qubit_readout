@@ -407,8 +407,6 @@ exp.set_opt_gates(["swap_10_20[0, 1]", "swap_20_01[0, 1]", 'Readout[1]'])
 
 # %%
 exp.write_config("./Configs/Full_simulation_ode_solver.hjson")
-parameter_map.store_values("./pmaps/Full_simulation_pmap_before_opt_ode_solver.c3log")
-
 # %%
 
 model.set_lindbladian(True)
@@ -528,8 +526,95 @@ parameter_map.set_opt_map([
 ])
 
 parameter_map.print_parameters()
+parameter_map.store_values("./pmaps/Full_simulation_pmap_before_opt_ode_solver.c3log")
 
 # %%
 
+ground_state = [[0] * model.tot_dim]
+ground_state_index = model.get_state_indeces([(0,0)])[0]
+ground_state[0][ground_state_index] = 1
+ground_state = tf.transpose(tf.constant(ground_state, tf.complex128))
+if model.lindbladian:
+    ground_state = tf_utils.tf_state_to_dm(ground_state)
+
+first_excited_state = [[0] * model.tot_dim]
+FE_state_index = model.get_state_indeces([(1,0)])[0]
+first_excited_state[0][FE_state_index] = 1
+first_excited_state = tf.transpose(tf.constant(first_excited_state, tf.complex128))
+if model.lindbladian:
+    first_excited_state = tf_utils.tf_state_to_dm(first_excited_state)
+
+second_excited_state = [[0] * model.tot_dim]
+SE_state_index = model.get_state_indeces([(1,0)])[0]
+second_excited_state[0][SE_state_index] = 1
+second_excited_state = tf.transpose(tf.constant(second_excited_state, tf.complex128))
+if model.lindbladian:
+    second_excited_state = tf_utils.tf_state_to_dm(second_excited_state)
+
+sequence = ["swap_10_20[0, 1]"]#["swap_10_20[0, 1]", "swap_20_01[0, 1]", 'Readout[1]']
 
 
+freq_q = 0#resonator_frequency - 2.5*sideband
+freq_r = 0#resonator_frequency - 2.5*sideband
+t_final = tswap_10_20 + tswap_20_01 + t_readout
+
+aR = tf.convert_to_tensor(model.ann_opers[1], dtype = tf.complex128)
+aQ = tf.convert_to_tensor(model.ann_opers[0], dtype = tf.complex128)
+aR_dag = tf.transpose(aR, conjugate=True)
+Nr = tf.matmul(aR_dag,aR)
+aQ_dag = tf.transpose(aQ, conjugate=True)
+Nq = tf.matmul(aQ_dag, aQ)
+
+pi = tf.constant(math.pi, dtype=tf.complex128)
+Urot = tf.linalg.expm(1j*2*pi*(freq_r*Nr + freq_q*Nq)*t_final)
+U_rot_dag = tf.transpose(Urot, conjugate=True)
+a_rotated = tf.matmul(U_rot_dag, tf.matmul(aR, Urot))
+
+d_max = 1.0
+swap_cost = 1.0
+
+swap_position = int((tswap_10_20 + tswap_20_01)*sim_res)
+
+init_state = first_excited_state
+swap_target_g = ground_state
+swap_target_e = second_excited_state
+
+
+opt = OptimalControl(
+    dir_path="./output/",
+    fid_func=fidelities.swap_and_readout_ode,
+    fid_subspace=["Q", "R"],
+    pmap=parameter_map,
+    algorithm=algorithms.lbfgs,
+    run_name="Test_redout_ode",
+    states_solver=True,
+    readout=True,
+    init_state=init_state,
+    sequence=sequence,
+    fid_func_kwargs={
+                        "params":{
+                                    "ground_state": ground_state, 
+                                    "a_rotated": a_rotated,
+                                    "lindbladian": model.lindbladian,
+                                    "cutoff_distance": d_max,
+                                    "swap_pos": swap_position,
+                                    "swap_cost": swap_cost,
+                                    "swap_target_state_excited": swap_target_e,
+                                    "swap_target_state_ground": swap_target_g,
+                                },
+                        "ground_state": ground_state
+                    }
+)
+exp.set_opt_gates(["swap_10_20[0, 1]", "swap_20_01[0, 1]", 'Readout[1]'])
+opt.set_exp(exp)
+
+# %%
+
+tf.config.run_functions_eagerly(True)
+opt.optimize_controls()
+print(opt.current_best_goal)
+print(parameter_map.print_parameters())
+
+parameter_map.store_values("./pmaps/Full_simulation_pmap_after_opt_ode_solver.c3log")
+
+# %%
