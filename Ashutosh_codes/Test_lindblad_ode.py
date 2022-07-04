@@ -33,6 +33,7 @@ from plotting import *
 from utilities_functions import *
 
 from matplotlib import cm
+from distinctipy import distinctipy
 
 #%%
 
@@ -54,7 +55,7 @@ qubit = chip.Qubit(
     temp=Qty(value=qubit_temp,min_val=0.0,max_val=0.12,unit='K')
 )
 
-resonator_levels = 10
+resonator_levels = 4
 resonator_frequency = 6.02e9
 resonator_t1 = 27e-6
 resonator_t2star = 39e-6
@@ -409,26 +410,35 @@ exp = Exp(pmap=parameter_map, sim_res=sim_res)
 # %%
 exp.set_opt_gates(["swap_10_20[0, 1]"])#, "swap_20_01[0, 1]"])
 
-model.set_lindbladian(True)
+model.set_lindbladian(False)
 psi_init = [[0] * model.tot_dim]
 init_state_index = model.get_state_indeces([(1,0)])[0]
 psi_init[0][init_state_index] = 1
 init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
-sequence = ["swap_10_20[0, 1]"]
+sequence = ["NoDrive[0, 1]"]#["swap_10_20[0, 1]"]
 
 exp.write_config("Readout_optimization_test.hjson")
 
-#Num_shots = 5
-#result = exp.solve_stochastic_ode(
+
+#result = exp.solve_lindblad_ode(
 #            init_state, 
-#            sequence, 
-#            Num_shots, 
-#            enable_vec_map=True,
-#            batch_size=1)
+#            sequence
+#            )
+#
 #rhos = result["states"]
 #ts = result["ts"]
+
+Num_shots = 1
+result = exp.solve_stochastic_ode(
+            init_state, 
+            sequence, 
+            Num_shots, 
+            enable_vec_map=True,
+            batch_size=1)
+rhos = result["states"]
+ts = result["ts"]
 # %%
 @tf.function
 def calculatePopFromShots(psis, Num_shots):
@@ -460,7 +470,8 @@ def plotPopulationFromState(
     Num_shots = 1,
     plot_avg = False,
     enable_vec_map=False,
-    batch_size=None
+    batch_size=None,
+    states_to_plot=None
 ):
 
     model = exp.pmap.model
@@ -472,14 +483,32 @@ def plotPopulationFromState(
         pops = []
         for rho in rhos:
             pops.append(tf.math.real(tf.linalg.diag_part(rho)))
-        plt.figure(figsize=[10,5])
-        plt.plot(ts, pops)
-        plt.legend(
-            model.state_labels,
-            ncol=int(np.ceil(model.tot_dim / 15)),
-            bbox_to_anchor=(1.05, 1.0),
-            loc="upper left")
-        plt.tight_layout()
+
+        if states_to_plot == None:
+            plt.figure(figsize=[10,5])
+            colors = distinctipy.get_colors(len(model.state_labels))
+            plt.gca().set_prop_cycle(color=colors)
+            plt.plot(ts, pops)
+            plt.legend(
+                model.state_labels,
+                ncol=int(np.ceil(model.tot_dim / 15)),
+                bbox_to_anchor=(1.05, 1.0),
+                loc="upper left")
+            plt.tight_layout()
+        else:
+            plt.figure(figsize=[10,5])
+            colors = distinctipy.get_colors(len(states_to_plot))
+            plt.gca().set_prop_cycle(color=colors)
+            index = model.get_state_indeces(states_to_plot)
+            pops = tf.transpose(pops)
+            for i in index:
+                plt.plot(ts, pops[i])
+            plt.legend(
+                states_to_plot,
+                ncol=int(np.ceil(model.tot_dim / 15)),
+                bbox_to_anchor=(1.05, 1.0),
+                loc="upper left")
+            plt.tight_layout()
     else:
         result = exp.solve_stochastic_ode(
                 init_state, 
@@ -495,6 +524,8 @@ def plotPopulationFromState(
         if plot_avg:
             if enable_vec_map:
                 plt.figure(figsize=[10,5])
+                colors = distinctipy.get_colors(len(model.state_labels))
+                plt.gca().set_prop_cycle(color=colors)
                 plt.plot(ts[0], tf.reduce_mean(pops, axis=0))
                 plt.legend(
                         model.state_labels,
@@ -504,6 +535,8 @@ def plotPopulationFromState(
                 plt.tight_layout()
             else:    
                 plt.figure(figsize=[10,5])
+                colors = distinctipy.get_colors(len(model.state_labels))
+                plt.gca().set_prop_cycle(color=colors)
                 plt.plot(ts, tf.reduce_mean(pops, axis=0))
                 plt.legend(
                         model.state_labels,
@@ -516,6 +549,8 @@ def plotPopulationFromState(
             if enable_vec_map:
                 plt.figure(figsize=[10,5])
                 for i in range(len(pops)):
+                    colors = distinctipy.get_colors(len(model.state_labels))
+                    plt.gca().set_prop_cycle(color=colors)
                     plt.plot(ts[0], pops[i])
                     plt.legend(
                         model.state_labels,
@@ -527,6 +562,8 @@ def plotPopulationFromState(
             else:
                 plt.figure(figsize=[10,5])
                 for i in range(len(pops)):
+                    colors = distinctipy.get_colors(len(model.state_labels))
+                    plt.gca().set_prop_cycle(color=colors)
                     plt.plot(ts, pops[i])
                     plt.legend(
                         model.state_labels,
@@ -538,23 +575,30 @@ def plotPopulationFromState(
 
 parameter_map.load_values("readout_optimization_best_point_open_loop.c3log")
 
-model.set_lindbladian(True)
+model.set_lindbladian(False)
 psi_init = [[0] * model.tot_dim]
-init_state_index = model.get_state_indeces([(2,0)])[0]
+init_state_index = model.get_state_indeces([(1,0)])[0]
 psi_init[0][init_state_index] = 1
 init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
-sequence = ["Readout[1]"]#["NoDrive[0, 1]"]#["Readout[1]"]#["swap_10_20[0, 1]"]
+sequence = ["NoDrive[0, 1]"]#["Readout[1]"]#["swap_10_20[0, 1]"]
 
+states_to_plot = [(0,8), (0,9),
+                  (1,8), (1,9),
+                  (2,8), (2,9),
+                  (3,8), (3,9)]
+
+tf.config.run_functions_eagerly(True)
 plotPopulationFromState(
                     exp, 
                     init_state, 
                     sequence, 
                     Num_shots=1, 
                     plot_avg=True, 
-                    enable_vec_map=True,
-                    batch_size=None
+                    enable_vec_map=False,
+                    batch_size=None,
+                    states_to_plot=None
 )
 #%%
 @tf.function
@@ -575,6 +619,11 @@ def calculateIQFromStates(model, psis, freq_q, freq_r, t_final, spacing=100):
 
     return expect
 
+@tf.function
+def calculateIQDistance(IQ1, IQ2):
+    return tf.abs(IQ1 - IQ2)**2
+
+
 #%%
 
 def plotIQFromStates(
@@ -585,7 +634,8 @@ def plotIQFromStates(
     freq_q: tf.Tensor,
     freq_r: tf.Tensor,
     t_final: tf.Tensor,
-    spacing=100
+    spacing=100,
+    connect_points=False
 ):
     model = exp.pmap.model
     
@@ -633,9 +683,24 @@ def plotIQFromStates(
     plt.figure(dpi=100)
     plt.plot(Q1, I1, label="Ground state" , marker = "o", linestyle="--")
     plt.plot(Q2, I2, label="Excited state", marker = "o", linestyle="--")
+    
+    if connect_points:
+        for x1, x2, y1, y2 in zip(Q1, Q2, I1, I2):
+            plt.plot([x1, x2], [y1, y2], linestyle="dotted", color="black", alpha=0.2)
+    
     plt.xlabel("Q")
     plt.ylabel("I")
     plt.legend()
+    plt.show()
+
+    
+
+    distance = calculateIQDistance(IQ1, IQ2)
+
+    plt.figure(dpi=100)
+    plt.plot(ts[::spacing], distance)
+    plt.xlabel("Time (in seconds)")
+    plt.ylabel("Distance (in arbitrary units)")
     plt.show()
 
 
@@ -671,7 +736,8 @@ plotIQFromStates(
     freq_q=freq_q,
     freq_r=freq_r,
     t_final=t_final,
-    spacing=1000
+    spacing=1000,
+    connect_points=True
 )
 
 
@@ -696,7 +762,7 @@ def calculateIQFromShots(model, psis, Num_shots, freq_q, freq_r, t_final):
     U = tf.expand_dims(U, axis=0)
     ar = tf.expand_dims(ar, axis=0)
     for i in tf.range(Num_shots):
-        psi_transformed = tf.matmul(U, psis[i][::100])
+        psi_transformed = tf.matmul(U, psis[i][-1])#[::100])
         expect =tf.matmul(
                     tf.transpose(psi_transformed, conjugate=True, perm=[0,2,1]),
                     tf.matmul(ar, psi_transformed)
@@ -777,43 +843,41 @@ def plotIQFromShots(
     plt.legend()
     plt.show()
 
+model.set_lindbladian(False)
 
-#model.set_lindbladian(False)
-#
-#psi1_init = [[0] * model.tot_dim]
-#init_state1_index = model.get_state_indeces([(0,0)])[0]
-#psi1_init[0][init_state1_index] = 1
-#init_state1 = tf.transpose(tf.constant(psi1_init, tf.complex128))
-#if model.lindbladian:
-#    init_state1 = tf_utils.tf_state_to_dm(init_state1)
-#
-#psi2_init = [[0] * model.tot_dim]
-#init_state2_index = model.get_state_indeces([(1,0)])[0]
-#psi2_init[0][init_state2_index] = 1
-#init_state2 = tf.transpose(tf.constant(psi2_init, tf.complex128))
-#if model.lindbladian:
-#    init_state2 = tf_utils.tf_state_to_dm(init_state2)
-#
-#
-#sequence = ["Readout[1]"]
-#
-#freq_q = resonator_frequency - 2.5*sideband
-#freq_r = resonator_frequency - 2.5*sideband
-#t_final = t_readout
+psi1_init = [[0] * model.tot_dim]
+init_state1_index = model.get_state_indeces([(0,0)])[0]
+psi1_init[0][init_state1_index] = 1
+init_state1 = tf.transpose(tf.constant(psi1_init, tf.complex128))
+if model.lindbladian:
+    init_state1 = tf_utils.tf_state_to_dm(init_state1)
 
-#tf.config.run_functions_eagerly(False)
-#plotIQFromShots(
-#    exp=exp,
-#    init_state1=init_state1,
-#    init_state2=init_state2,
-#    sequence=sequence,
-#    freq_q=freq_q,
-#    freq_r=freq_r,
-#    t_final=t_final,
-#    Num_shots=10,
-#    enable_vec_map=True,
-#    batch_size=None
-#)
+psi2_init = [[0] * model.tot_dim]
+init_state2_index = model.get_state_indeces([(1,0)])[0]
+psi2_init[0][init_state2_index] = 1
+init_state2 = tf.transpose(tf.constant(psi2_init, tf.complex128))
+if model.lindbladian:
+    init_state2 = tf_utils.tf_state_to_dm(init_state2)
+
+
+sequence = ["Readout[1]"]
+
+freq_q = resonator_frequency - 2.5*sideband
+freq_r = resonator_frequency - 2.5*sideband
+t_final = t_readout
+
+plotIQFromShots(
+    exp=exp,
+    init_state1=init_state1,
+    init_state2=init_state2,
+    sequence=sequence,
+    freq_q=0,#freq_q,
+    freq_r=0,#freq_r,
+    t_final=t_final,
+    Num_shots=100,
+    enable_vec_map=True,
+    batch_size=25
+)
 
 
 #%%

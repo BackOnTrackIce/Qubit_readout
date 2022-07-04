@@ -1055,7 +1055,7 @@
             symbol: \alpha
           }
         }
-        hilbert_dim: 10
+        hilbert_dim: 4
       }
     }
     Couplings:
