@@ -919,7 +919,8 @@ def plotPopulationFromState(
     plot_avg = False,
     enable_vec_map=False,
     batch_size=None,
-    states_to_plot=None
+    states_to_plot=None,
+    filename=None
 ):
 
     model = exp.pmap.model
@@ -957,6 +958,8 @@ def plotPopulationFromState(
                 bbox_to_anchor=(1.05, 1.0),
                 loc="upper left")
             plt.tight_layout()
+        if filename != None:
+            plt.savefig(f"{filename}.png")
     else:
         result = exp.solve_stochastic_ode(
                 init_state, 
@@ -992,6 +995,9 @@ def plotPopulationFromState(
                         bbox_to_anchor=(1.05, 1.0),
                         loc="upper left")
                 plt.tight_layout()
+            
+            if filename != None:
+                plt.savefig(f"{filename}.png")
 
         else:
             if enable_vec_map:
@@ -1019,6 +1025,9 @@ def plotPopulationFromState(
                         bbox_to_anchor=(1.05, 1.0),
                         loc="upper left")
                     plt.tight_layout()
+            if filename != None:
+                plt.savefig(f"{filename}.png")
+        
 
 @tf.function
 def calculateIQFromStates(model, psis, freq_q, freq_r, t_final, spacing=100):
@@ -1051,7 +1060,8 @@ def plotIQFromStates(
     freq_r: tf.Tensor,
     t_final: tf.Tensor,
     spacing=100,
-    connect_points=False
+    connect_points=False,
+    filename=None
 ):
     model = exp.pmap.model
     
@@ -1108,6 +1118,8 @@ def plotIQFromStates(
     plt.ylabel("I")
     plt.legend()
     plt.show()
+    if filename != None:
+        plt.savefig(f"{filename}_IQ.png")
 
     distance = calculateIQDistance(IQ1, IQ2)
 
@@ -1116,6 +1128,8 @@ def plotIQFromStates(
     plt.xlabel("Time (in seconds)")
     plt.ylabel("Distance (in arbitrary units)")
     plt.show()
+    if filename != None:
+        plt.savefig(f"{filename}_distance.png")
 
 
 
@@ -1161,7 +1175,8 @@ def plotIQFromShots(
     t_final: tf.Tensor,
     Num_shots = 1,
     enable_vec_map=False,
-    batch_size=None
+    batch_size=None,
+    filename=None
 ):
     model = exp.pmap.model
     
@@ -1218,4 +1233,6 @@ def plotIQFromShots(
     plt.ylabel("I")
     plt.legend()
     plt.show()
+    if filename!= None:
+        plt.savefig(f"{filename}.png")
 

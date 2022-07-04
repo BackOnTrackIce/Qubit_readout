@@ -111,7 +111,7 @@ model = Mdl(
 model.set_lindbladian(False)
 model.set_dressed(False)
 
-sim_res = 100e9
+sim_res = 500e9
 awg_res = 2e9
 v2hz = 1e9
 
@@ -411,3 +411,121 @@ parameter_map.store_values("./pmaps/Full_simulation_pmap_before_opt_ode_solver.c
 
 # %%
 
+model.set_lindbladian(True)
+psi_init = [[0] * model.tot_dim]
+init_state_index = model.get_state_indeces([(1,0)])[0]
+psi_init[0][init_state_index] = 1
+init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
+if model.lindbladian:
+    init_state = tf_utils.tf_state_to_dm(init_state)
+sequence = ["swap_10_20[0, 1]", "swap_20_01[0, 1]", 'Readout[1]']
+
+states_to_plot = [(0,8), (0,9),
+                  (1,8), (1,9),
+                  (2,8), (2,9),
+                  (3,8), (3,9)]
+
+plotPopulationFromState(
+                    exp, 
+                    init_state, 
+                    sequence, 
+                    Num_shots=1, 
+                    plot_avg=True, 
+                    enable_vec_map=False,
+                    batch_size=None,
+                    states_to_plot=None
+)
+# %%
+model.set_lindbladian(True)
+
+psi1_init = [[0] * model.tot_dim]
+init_state1_index = model.get_state_indeces([(0,0)])[0]
+psi1_init[0][init_state1_index] = 1
+init_state1 = tf.transpose(tf.constant(psi1_init, tf.complex128))
+if model.lindbladian:
+    init_state1 = tf_utils.tf_state_to_dm(init_state1)
+
+psi2_init = [[0] * model.tot_dim]
+init_state2_index = model.get_state_indeces([(1,0)])[0]
+psi2_init[0][init_state2_index] = 1
+init_state2 = tf.transpose(tf.constant(psi2_init, tf.complex128))
+if model.lindbladian:
+    init_state2 = tf_utils.tf_state_to_dm(init_state2)
+
+sequence = ["swap_10_20[0, 1]", "swap_20_01[0, 1]", 'Readout[1]']
+
+freq_q = 0#resonator_frequency - 2.5*sideband
+freq_r = 0#resonator_frequency - 2.5*sideband
+t_final = tswap_10_20 + tswap_20_01 + t_readout
+
+plotIQFromStates(
+    exp=exp,
+    init_state1=init_state1,
+    init_state2=init_state2,
+    sequence=sequence,
+    freq_q=freq_q,
+    freq_r=freq_r,
+    t_final=t_final,
+    spacing=1000,
+    connect_points=True
+)
+
+# %%
+
+print("Starting optimization .... ")
+
+parameter_map.set_opt_map([
+    [("swap_10_20[0, 1]", "dR", "carrier", "freq")],
+    [("swap_10_20[0, 1]", "dR", "swap_pulse", "amp")],
+    [("swap_10_20[0, 1]", "dR", "swap_pulse", "t_up")],
+    [("swap_10_20[0, 1]", "dR", "swap_pulse", "t_down")],
+    [("swap_10_20[0, 1]", "dR", "swap_pulse", "risefall")],
+    [("swap_10_20[0, 1]", "dR", "swap_pulse", "xy_angle")],
+    [("swap_10_20[0, 1]", "dR", "swap_pulse", "freq_offset")],
+    [("swap_10_20[0, 1]", "dR", "swap_pulse", "delta")],
+    [("swap_10_20[0, 1]", "dQ", "carrier", "freq")],
+    [("swap_10_20[0, 1]", "dQ", "swap_pulse", "amp")],
+    [("swap_10_20[0, 1]", "dQ", "swap_pulse", "t_up")],
+    [("swap_10_20[0, 1]", "dQ", "swap_pulse", "t_down")],
+    [("swap_10_20[0, 1]", "dQ", "swap_pulse", "risefall")],
+    [("swap_10_20[0, 1]", "dQ", "swap_pulse", "xy_angle")],
+    [("swap_10_20[0, 1]", "dQ", "swap_pulse", "freq_offset")],
+    [("swap_10_20[0, 1]", "dQ", "swap_pulse", "delta")],
+    [("swap_20_01[0, 1]", "dR", "carrier", "freq")],
+    [("swap_20_01[0, 1]", "dR", "swap2_pulse", "amp")],
+    [("swap_20_01[0, 1]", "dR", "swap2_pulse", "t_up")],
+    [("swap_20_01[0, 1]", "dR", "swap2_pulse", "t_down")],
+    [("swap_20_01[0, 1]", "dR", "swap2_pulse", "risefall")],
+    [("swap_20_01[0, 1]", "dR", "swap2_pulse", "xy_angle")],
+    [("swap_20_01[0, 1]", "dR", "swap2_pulse", "freq_offset")],
+    [("swap_20_01[0, 1]", "dR", "swap2_pulse", "delta")],
+    [("swap_20_01[0, 1]", "dQ", "carrier", "freq")],
+    [("swap_20_01[0, 1]", "dQ", "swap2_pulse", "amp")],
+    [("swap_20_01[0, 1]", "dQ", "swap2_pulse", "t_up")],
+    [("swap_20_01[0, 1]", "dQ", "swap2_pulse", "t_down")],
+    [("swap_20_01[0, 1]", "dQ", "swap2_pulse", "risefall")],
+    [("swap_20_01[0, 1]", "dQ", "swap2_pulse", "xy_angle")],
+    [("swap_20_01[0, 1]", "dQ", "swap2_pulse", "freq_offset")],
+    [("swap_20_01[0, 1]", "dQ", "swap2_pulse", "delta")],
+    [("Readout[1]", "dR", "carrier", "freq")],
+    [("Readout[1]", "dR", "readout-pulse", "amp")],
+    [("Readout[1]", "dR", "readout-pulse", "t_up")],
+    [("Readout[1]", "dR", "readout-pulse", "t_down")],
+    [("Readout[1]", "dR", "readout-pulse", "risefall")],
+    [("Readout[1]", "dR", "readout-pulse", "xy_angle")],
+    [("Readout[1]", "dR", "readout-pulse", "freq_offset")],
+    [("Readout[1]", "dR", "readout-pulse", "delta")],
+    [("Readout[1]", "dQ", "carrier", "freq")],
+    [("Readout[1]", "dQ", "readout-pulse", "amp")],
+    [("Readout[1]", "dQ", "readout-pulse", "t_up")],
+    [("Readout[1]", "dQ", "readout-pulse", "t_down")],
+    [("Readout[1]", "dQ", "readout-pulse", "risefall")],
+    [("Readout[1]", "dQ", "readout-pulse", "xy_angle")],
+    [("Readout[1]", "dQ", "readout-pulse", "freq_offset")],
+    [("Readout[1]", "dQ", "readout-pulse", "delta")],
+])
+
+parameter_map.print_parameters()
+
+
+# %%
