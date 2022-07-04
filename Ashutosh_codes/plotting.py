@@ -11,6 +11,8 @@ from c3.experiment import Experiment
 import c3.utils.tf_utils as tf_utils
 import tensorflow as tf
 import math
+from distinctipy import distinctipy
+
 
 
 def plotSignal(time, signal, filename=None):
@@ -916,25 +918,45 @@ def plotPopulationFromState(
     Num_shots = 1,
     plot_avg = False,
     enable_vec_map=False,
-    batch_size=None
+    batch_size=None,
+    states_to_plot=None
 ):
 
     model = exp.pmap.model
     if model.lindbladian:
-        result = exp.solve_lindblad_ode(init_state, sequence)
+        solve_lindblad_ode_tf = tf.function(exp.solve_lindblad_ode)
+        result = solve_lindblad_ode_tf(init_state, sequence)
         rhos = result["states"]
         ts = result["ts"]
         pops = []
         for rho in rhos:
             pops.append(tf.math.real(tf.linalg.diag_part(rho)))
-        plt.figure(figsize=[10,5])
-        plt.plot(ts, pops)
-        plt.legend(
-            model.state_labels,
-            ncol=int(np.ceil(model.tot_dim / 15)),
-            bbox_to_anchor=(1.05, 1.0),
-            loc="upper left")
-        plt.tight_layout()
+
+        if states_to_plot == None:
+            plt.figure(figsize=[10,5])
+            colors = distinctipy.get_colors(len(model.state_labels))
+            plt.gca().set_prop_cycle(color=colors)
+            plt.plot(ts, pops)
+            plt.legend(
+                model.state_labels,
+                ncol=int(np.ceil(model.tot_dim / 15)),
+                bbox_to_anchor=(1.05, 1.0),
+                loc="upper left")
+            plt.tight_layout()
+        else:
+            plt.figure(figsize=[10,5])
+            colors = distinctipy.get_colors(len(states_to_plot))
+            plt.gca().set_prop_cycle(color=colors)
+            index = model.get_state_indeces(states_to_plot)
+            pops = tf.transpose(pops)
+            for i in index:
+                plt.plot(ts, pops[i])
+            plt.legend(
+                states_to_plot,
+                ncol=int(np.ceil(model.tot_dim / 15)),
+                bbox_to_anchor=(1.05, 1.0),
+                loc="upper left")
+            plt.tight_layout()
     else:
         result = exp.solve_stochastic_ode(
                 init_state, 
@@ -950,6 +972,8 @@ def plotPopulationFromState(
         if plot_avg:
             if enable_vec_map:
                 plt.figure(figsize=[10,5])
+                colors = distinctipy.get_colors(len(model.state_labels))
+                plt.gca().set_prop_cycle(color=colors)
                 plt.plot(ts[0], tf.reduce_mean(pops, axis=0))
                 plt.legend(
                         model.state_labels,
@@ -959,6 +983,8 @@ def plotPopulationFromState(
                 plt.tight_layout()
             else:    
                 plt.figure(figsize=[10,5])
+                colors = distinctipy.get_colors(len(model.state_labels))
+                plt.gca().set_prop_cycle(color=colors)
                 plt.plot(ts, tf.reduce_mean(pops, axis=0))
                 plt.legend(
                         model.state_labels,
@@ -971,6 +997,8 @@ def plotPopulationFromState(
             if enable_vec_map:
                 plt.figure(figsize=[10,5])
                 for i in range(len(pops)):
+                    colors = distinctipy.get_colors(len(model.state_labels))
+                    plt.gca().set_prop_cycle(color=colors)
                     plt.plot(ts[0], pops[i])
                     plt.legend(
                         model.state_labels,
@@ -982,6 +1010,8 @@ def plotPopulationFromState(
             else:
                 plt.figure(figsize=[10,5])
                 for i in range(len(pops)):
+                    colors = distinctipy.get_colors(len(model.state_labels))
+                    plt.gca().set_prop_cycle(color=colors)
                     plt.plot(ts, pops[i])
                     plt.legend(
                         model.state_labels,
@@ -990,7 +1020,106 @@ def plotPopulationFromState(
                         loc="upper left")
                     plt.tight_layout()
 
+@tf.function
+def calculateIQFromStates(model, psis, freq_q, freq_r, t_final, spacing=100):
+    ar = tf.convert_to_tensor(model.ann_opers[1], dtype=tf.complex128)
+    aq = tf.convert_to_tensor(model.ann_opers[0], dtype=tf.complex128)
 
+    Nr = tf.matmul(tf.transpose(ar, conjugate=True), ar)
+    Nq = tf.matmul(tf.transpose(aq, conjugate=True), aq)
+
+    pi = tf.constant(math.pi, dtype=tf.complex128)
+    U = tf.linalg.expm(1j*2*pi*(freq_r*Nr + freq_q*Nq)*t_final)
+    psi_transformed = tf.matmul(
+                            tf.transpose(U, conjugate=True),
+                            tf.matmul(psis[::spacing], U)
+    )
+    expect = tf.linalg.trace(tf.matmul(psi_transformed, ar))
+
+    return expect
+
+@tf.function
+def calculateIQDistance(IQ1, IQ2):
+    return tf.abs(IQ1 - IQ2)**2
+
+def plotIQFromStates(
+    exp: Experiment,
+    init_state1: tf.Tensor,
+    init_state2: tf.Tensor,
+    sequence: List[str],
+    freq_q: tf.Tensor,
+    freq_r: tf.Tensor,
+    t_final: tf.Tensor,
+    spacing=100,
+    connect_points=False
+):
+    model = exp.pmap.model
+    
+    solve_lindbald_ode_tf = tf.function(exp.solve_lindblad_ode)
+    result1 = solve_lindbald_ode_tf(
+            init_state1, 
+            sequence 
+    )
+    psis1 = result1["states"]
+    ts = result1["ts"]
+
+    IQ1 = calculateIQFromStates(
+            model, 
+            psis1, 
+            freq_q, 
+            freq_r, 
+            t_final,
+            spacing
+    )
+
+
+    result2 = solve_lindbald_ode_tf(
+            init_state2, 
+            sequence 
+    )
+    psis2 = result2["states"]
+    ts = result1["ts"]
+
+    IQ2 = calculateIQFromStates(
+            model, 
+            psis2, 
+            freq_q, 
+            freq_r, 
+            t_final,
+            spacing
+    )
+
+    
+    Q1 = tf.math.real(IQ1)
+    I1 = tf.math.imag(IQ1)
+
+    Q2 = tf.math.real(IQ2)
+    I2 = tf.math.imag(IQ2)
+    
+    plt.figure(dpi=100)
+    plt.plot(Q1, I1, label="Ground state" , marker = "o", linestyle="--")
+    plt.plot(Q2, I2, label="Excited state", marker = "o", linestyle="--")
+    
+    if connect_points:
+        for x1, x2, y1, y2 in zip(Q1, Q2, I1, I2):
+            plt.plot([x1, x2], [y1, y2], linestyle="dotted", color="black", alpha=0.2)
+    
+    plt.xlabel("Q")
+    plt.ylabel("I")
+    plt.legend()
+    plt.show()
+
+    distance = calculateIQDistance(IQ1, IQ2)
+
+    plt.figure(dpi=100)
+    plt.plot(ts[::spacing], distance)
+    plt.xlabel("Time (in seconds)")
+    plt.ylabel("Distance (in arbitrary units)")
+    plt.show()
+
+
+
+@tf.function
 def calculateIQFromShots(model, psis, Num_shots, freq_q, freq_r, t_final):
     IQ = tf.TensorArray(
         tf.complex128,
@@ -1007,17 +1136,15 @@ def calculateIQFromShots(model, psis, Num_shots, freq_q, freq_r, t_final):
 
     pi = tf.constant(math.pi, dtype=tf.complex128)
     U = tf.linalg.expm(1j*2*pi*(freq_r*Nr + freq_q*Nq)*t_final)
-
+    U = tf.expand_dims(U, axis=0)
+    ar = tf.expand_dims(ar, axis=0)
     for i in tf.range(Num_shots):
-        psi_transformed = tf.matmul(U, psis[i][-1])
-
-        expect = tf.matmul(
-                    tf.matmul(
-                        tf.transpose(psi_transformed, conjugate=True),
-                        ar
-                    ),
-                    psi_transformed
-        )[0,0]
+        psi_transformed = tf.matmul(U, psis[i][-1])#[::100])
+        expect =tf.matmul(
+                    tf.transpose(psi_transformed, conjugate=True, perm=[0,2,1]),
+                    tf.matmul(ar, psi_transformed)
+        )[:,0,0]
+        print(expect)
 
         IQ = IQ.write(i, expect)
 
@@ -1084,7 +1211,7 @@ def plotIQFromShots(
     Q2 = tf.math.real(IQ2)
     I2 = tf.math.imag(IQ2)
     
-    plt.figure(dpi=150)
+    plt.figure(dpi=100)
     plt.scatter(Q1, I1, label="Ground state")
     plt.scatter(Q2, I2, label="Excited state")
     plt.xlabel("Q")
