@@ -33,10 +33,10 @@ from c3.optimizers.optimalcontrol import OptimalControl
 
 #%%
 qubit_levels = 3
-qubit_frequency = 7.86e9
-qubit_anharm = -264e6
+qubit_frequency = 5e9
+qubit_anharm = -200e6
 qubit_t1 = 20e-9
-qubit_t2star = 39e-9
+qubit_t2star = 40e-9
 qubit_temp = 50e-3
 
 qubit = chip.Qubit(
@@ -45,7 +45,7 @@ qubit = chip.Qubit(
     freq=Qty(value=qubit_frequency,min_val=1e9 ,max_val=8e9 ,unit='Hz 2pi'),
     anhar=Qty(value=qubit_anharm,min_val=-380e6 ,max_val=-120e6 ,unit='Hz 2pi'),
     hilbert_dim=qubit_levels,
-    t1=Qty(value=qubit_t1,min_val=1e-9,max_val=90e-9,unit='s'),
+    t1=Qty(value=qubit_t1,min_val=10e-9,max_val=90e-9,unit='s'),
     t2star=Qty(value=qubit_t2star,min_val=10e-9,max_val=90e-9,unit='s'),
     temp=Qty(value=qubit_temp,min_val=0.0,max_val=0.12,unit='K')
 )
@@ -155,7 +155,7 @@ exp = Exp(pmap=parameter_map)
 model.set_FR(False)
 model.set_lindbladian(True)
 exp.set_opt_gates(['nodrive[0]'])
-exp.propagate_batch_size = 1000
+exp.propagate_batch_size = None
 #%%
 unitaries = exp.compute_propagators()
 print(unitaries)

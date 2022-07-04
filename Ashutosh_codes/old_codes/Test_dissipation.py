@@ -174,7 +174,7 @@ generator = Gnr(
         }
     )
 
-generator.devices["AWG"].enable_drag_2()
+#generator.devices["AWG"].enable_drag_2()
 
 def calculateState(
     exp: Experiment,

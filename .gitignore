@@ -1,5 +1,4 @@
-Ashutosh_codes/__pycache__/utilities_functions.cpython-38.pyc
-Ashutosh_codes/__pycache__/plotting.cpython-38.pyc
+Ashutosh_codes/__pycache__
 Ashutosh_codes/.ipynb_checkpoints
 Ashutosh_codes/output
 Ashutosh_codes/okteto.yml
@@ -73,3 +72,5 @@ Ashutosh_codes/Full_simulation.py
 Ashutosh_codes/SWAP_before_optimization.png
 Ashutosh_codes/Full_sim_plots/swap_and_readout_coherent.html
 Ashutosh_codes/Full_sim/swap_and_readout_coherent.html
+Ashutosh_codes/old_codes/__pycache__/plotting.cpython-38.pyc
+Ashutosh_codes/old_codes/__pycache__/utilities_functions.cpython-38.pyc
