@@ -896,19 +896,29 @@ def calculatePopFromShots(psis, Num_shots):
         dynamic_size=False, 
         infer_shape=False
     )
-    for i in tf.range(Num_shots):
-        pops_shots = tf.TensorArray(
-            tf.double,
-            size=psis.shape[1],
-            dynamic_size=False, 
-            infer_shape=False
-        )
-        counter = 0
-        for psi in psis[i]:
-            pop_t = tf.abs(psi)**2
-            pops_shots = pops_shots.write(counter, tf.reshape(pop_t, pop_t.shape[:-1]))
-            counter += 1
-        pops = pops.write(i, pops_shots.stack())
+    if type(psis) == list:
+        for i in range(Num_shots):
+            pops_shots = []
+            counter = 0
+            for psi in psis[i]:
+                pop_t = tf.abs(psi)**2
+                pops_shots.append(tf.reshape(pop_t, pop_t.shape[:-1]))
+                counter += 1
+            pops = pops.write(i, pops_shots)
+    else:
+        for i in tf.range(Num_shots):
+            pops_shots = tf.TensorArray(
+                tf.double,
+                size=psis.shape[1],
+                dynamic_size=False, 
+                infer_shape=False
+            )
+            counter = 0
+            for psi in psis[i]:
+                pop_t = tf.abs(psi)**2
+                pops_shots = pops_shots.write(counter, tf.reshape(pop_t, pop_t.shape[:-1]))
+                counter += 1
+            pops = pops.write(i, pops_shots.stack())
     return pops.stack()
 
 def plotPopulationFromState(
@@ -916,6 +926,7 @@ def plotPopulationFromState(
     init_state: tf.Tensor,
     sequence: List[str],
     Num_shots = 1,
+    solver="rk4",
     plot_avg = False,
     enable_vec_map=False,
     batch_size=None,
@@ -926,7 +937,7 @@ def plotPopulationFromState(
     model = exp.pmap.model
     if model.lindbladian:
         solve_lindblad_ode_tf = tf.function(exp.solve_lindblad_ode)
-        result = solve_lindblad_ode_tf(init_state, sequence)
+        result = solve_lindblad_ode_tf(init_state, sequence, solver=solver)
         rhos = result["states"]
         ts = result["ts"]
         pops = []
@@ -966,7 +977,8 @@ def plotPopulationFromState(
                 sequence, 
                 Num_shots, 
                 enable_vec_map=enable_vec_map,
-                batch_size=batch_size
+                batch_size=batch_size,
+                solver=solver
         )
         psis = result["states"]
         ts = result["ts"]
