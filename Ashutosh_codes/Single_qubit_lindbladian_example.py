@@ -1,6 +1,5 @@
 #%%
 import os
-from re import I
 import numpy as np
 import copy
 import matplotlib.pyplot as plt
@@ -40,8 +39,8 @@ from distinctipy import distinctipy
 qubit_levels = 4
 qubit_frequency = 5e9
 qubit_anharm = -200e6
-qubit_t1 = 20e-6
-qubit_t2star = 40e-6
+qubit_t1 = 20e-9
+qubit_t2star = 40e-9
 qubit_temp = 10e-6
 
 qubit = chip.Qubit(
@@ -72,7 +71,7 @@ model.set_dressed(False)
 
 #%%
 
-sim_res = 50e9
+sim_res = 100e9
 awg_res = 2e9
 v2hz = 1e9
 
@@ -209,7 +208,7 @@ exp.set_opt_gates(['nodrive[0]', 'x[0]'])
 #unitaries = compute_propagators_tf()
 exp.set_prop_method("pwc")
 unitaries = exp.compute_propagators()
-print(unitaries)
+#print(unitaries)
 
 #%%
 
@@ -227,12 +226,12 @@ plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False)
 model.set_lindbladian(True)
 
 psi_init = [[0] * model.tot_dim]
-init_state_index = model.get_state_indeces([(0,)])[0]
+init_state_index = model.get_state_indeces([(1,)])[0]
 psi_init[0][init_state_index] = 1
 init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
-sequence = ['x[0]']
+sequence = ["nodrive[0]"]#['x[0]']
 
 
 plotPopulationFromState(
@@ -251,19 +250,19 @@ plotPopulationFromState(
 # %%
 model.set_lindbladian(False)
 psi_init = [[0] * model.tot_dim]
-init_state_index = model.get_state_indeces([(0,)])[0]
+init_state_index = model.get_state_indeces([(1,)])[0]
 psi_init[0][init_state_index] = 1
 init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
-sequence = ['x[0]']
+sequence = ["nodrive[0]"]#['x[0]']
 
 plotPopulationFromState(
                     exp, 
                     init_state, 
                     sequence, 
-                    Num_shots=1, 
-                    plot_avg=False, 
+                    Num_shots=100, 
+                    plot_avg=True, 
                     enable_vec_map=True,
                     batch_size=None,
                     states_to_plot=None,
@@ -349,3 +348,17 @@ plt.show()
 
 
 # %%
+# Testing interpolation
+import c3.libraries.propagation as propagation
+from scipy import interpolate
+
+signal = generator.generate_signals(X_gate)
+signals = []
+for key in signal:
+    signals.append(signal[key]["values"])
+    ts = signal[key]["ts"]
+
+sig_inter_fun = interpolate.interp1d(ts, signals[0], fill_value="extrapolate")
+
+# %%
+

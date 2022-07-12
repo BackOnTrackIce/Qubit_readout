@@ -42,7 +42,7 @@ qubit_frequency = 7.86e9
 qubit_anharm = -264e6
 qubit_t1 = 27e-6
 qubit_t2star = 39e-6
-qubit_temp = 50e-3
+qubit_temp = 10e-6
 
 qubit = chip.Qubit(
     name="Q",
@@ -55,16 +55,16 @@ qubit = chip.Qubit(
     temp=Qty(value=qubit_temp,min_val=0.0,max_val=0.12,unit='K')
 )
 
-resonator_levels = 4
+resonator_levels = 10
 resonator_frequency = 6.02e9
-resonator_t1 = 27e-6
-resonator_t2star = 39e-6
-resonator_temp = 50e-3
+resonator_t1 = 100e-9
+resonator_t2star = 500e-9
+resonator_temp = 10e-6
 
 parameters_resonator = {
     "freq": Qty(value=resonator_frequency,min_val=0e9 ,max_val=8e9 ,unit='Hz 2pi'),
     "t1": Qty(value=resonator_t1,min_val=1e-10,max_val=90e-3,unit='s'),
-    "t2star": Qty(value=resonator_t2star,min_val=10e-6,max_val=90e-3,unit='s'),
+    "t2star": Qty(value=resonator_t2star,min_val=10e-9,max_val=90e-3,unit='s'),
     "temp": Qty(value=resonator_temp,min_val=0.0,max_val=0.12,unit='K')
 }
 
@@ -333,10 +333,13 @@ Delta_2 = (2 + qubit_anharm)*qubit_frequency
 chi_0 = (coupling_strength**2)/Delta_1
 chi_1 = (coupling_strength**2)/(Delta_2 - Delta_1)
 
-carriers = createCarriers([resonator_frequency+sideband - chi_1/2, resonator_frequency+sideband - chi_1/2], sideband)
+carriers = createCarriers([
+                            resonator_frequency+sideband - chi_1/2, 
+                            resonator_frequency+sideband - chi_1/2], 
+                            sideband)
 
-t_readout = 50e-9
-t_total = 50e-9
+t_readout = 20e-9
+t_total = 20e-9
 
 
 readout_params = {
@@ -375,10 +378,10 @@ nodrive_pulse = pulse.Envelope(
 )
 
 qubit_pulse = copy.deepcopy(readout_pulse)
-qubit_pulse.params["amp"] = Qty(value=2*np.pi*0.01,min_val=0.0,max_val=10.0,unit="V")
+qubit_pulse.params["amp"] = Qty(value=2*np.pi*0.05,min_val=0.0,max_val=10.0,unit="V")
 qubit_pulse.params["xy_angle"] = Qty(value=0,min_val=-0.5 * np.pi,max_val=2.5 * np.pi,unit="rad")
 resonator_pulse = copy.deepcopy(readout_pulse)
-resonator_pulse.params["amp"] = Qty(value=2*np.pi*0.01,min_val=0.0,max_val=10.0,unit="V")
+resonator_pulse.params["amp"] = Qty(value=2*np.pi*0.05,min_val=0.0,max_val=10.0,unit="V")
 resonator_pulse.params["xy_angle"] = Qty(value=-np.pi,min_val=-np.pi,max_val=2.5 * np.pi,unit="rad")
 
 Readout_gate = gates.Instruction(
@@ -430,16 +433,17 @@ exp.write_config("Readout_optimization_test.hjson")
 #rhos = result["states"]
 #ts = result["ts"]
 
-Num_shots = 1
-result = exp.solve_stochastic_ode(
-            init_state, 
-            sequence, 
-            Num_shots, 
-            enable_vec_map=True,
-            batch_size=1)
-rhos = result["states"]
-ts = result["ts"]
+#Num_shots = 1
+#result = exp.solve_stochastic_ode(
+#            init_state, 
+#            sequence, 
+#            Num_shots, 
+#            enable_vec_map=True,
+#            batch_size=1)
+#rhos = result["states"]
+#ts = result["ts"]
 # %%
+"""
 @tf.function
 def calculatePopFromShots(psis, Num_shots):
     pops = tf.TensorArray(
@@ -462,7 +466,9 @@ def calculatePopFromShots(psis, Num_shots):
             counter += 1
         pops = pops.write(i, pops_shots.stack())
     return pops.stack()
+"""
 #%%
+"""
 def plotPopulationFromState(
     exp: Experiment,
     init_state: tf.Tensor,
@@ -575,32 +581,35 @@ def plotPopulationFromState(
 
 parameter_map.load_values("readout_optimization_best_point_open_loop.c3log")
 
-model.set_lindbladian(False)
+"""
+
+model.set_lindbladian(True)
 psi_init = [[0] * model.tot_dim]
 init_state_index = model.get_state_indeces([(1,0)])[0]
 psi_init[0][init_state_index] = 1
 init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
-sequence = ["NoDrive[0, 1]"]#["Readout[1]"]#["swap_10_20[0, 1]"]
+sequence = ["Readout[1]"]#["NoDrive[0, 1]"]#["Readout[1]"]#["swap_10_20[0, 1]"]
 
 states_to_plot = [(0,8), (0,9),
                   (1,8), (1,9),
                   (2,8), (2,9),
                   (3,8), (3,9)]
 
-tf.config.run_functions_eagerly(True)
 plotPopulationFromState(
                     exp, 
                     init_state, 
                     sequence, 
                     Num_shots=1, 
                     plot_avg=True, 
-                    enable_vec_map=False,
+                    enable_vec_map=True,
                     batch_size=None,
-                    states_to_plot=None
+                    states_to_plot=states_to_plot,
+                    solver="rk4"
 )
 #%%
+"""
 @tf.function
 def calculateIQFromStates(model, psis, freq_q, freq_r, t_final, spacing=100):
     ar = tf.convert_to_tensor(model.ann_opers[1], dtype=tf.complex128)
@@ -622,10 +631,10 @@ def calculateIQFromStates(model, psis, freq_q, freq_r, t_final, spacing=100):
 @tf.function
 def calculateIQDistance(IQ1, IQ2):
     return tf.abs(IQ1 - IQ2)**2
-
+"""
 
 #%%
-
+"""
 def plotIQFromStates(
     exp: Experiment,
     init_state1: tf.Tensor,
@@ -703,7 +712,7 @@ def plotIQFromStates(
     plt.ylabel("Distance (in arbitrary units)")
     plt.show()
 
-
+"""
 
 model.set_lindbladian(True)
 
@@ -724,9 +733,11 @@ if model.lindbladian:
 
 sequence = ["Readout[1]"]
 
-freq_q = resonator_frequency - 2.5*sideband
-freq_r = resonator_frequency - 2.5*sideband
+freq_q = resonator_frequency + 9.36*sideband
+freq_r = resonator_frequency + 9.36*sideband
 t_final = t_readout
+
+
 
 plotIQFromStates(
     exp=exp,
@@ -736,12 +747,15 @@ plotIQFromStates(
     freq_q=freq_q,
     freq_r=freq_r,
     t_final=t_final,
-    spacing=1000,
-    connect_points=True
+    spacing=10,
+    connect_points=True,
+    xlim=2.0,
+    ylim=2.0
 )
 
 
 # %%
+"""
 @tf.function
 def calculateIQFromShots(model, psis, Num_shots, freq_q, freq_r, t_final):
     IQ = tf.TensorArray(
@@ -762,7 +776,7 @@ def calculateIQFromShots(model, psis, Num_shots, freq_q, freq_r, t_final):
     U = tf.expand_dims(U, axis=0)
     ar = tf.expand_dims(ar, axis=0)
     for i in tf.range(Num_shots):
-        psi_transformed = tf.matmul(U, psis[i][-1])#[::100])
+        psi_transformed = tf.matmul(U, psis[i][-1])#[-1]#[::100])
         expect =tf.matmul(
                     tf.transpose(psi_transformed, conjugate=True, perm=[0,2,1]),
                     tf.matmul(ar, psi_transformed)
@@ -772,9 +786,9 @@ def calculateIQFromShots(model, psis, Num_shots, freq_q, freq_r, t_final):
         IQ = IQ.write(i, expect)
 
     return IQ.stack()
-
+"""
 #%%
-
+"""
 def plotIQFromShots(
     exp: Experiment,
     init_state1: tf.Tensor,
@@ -843,6 +857,8 @@ def plotIQFromShots(
     plt.legend()
     plt.show()
 
+"""
+
 model.set_lindbladian(False)
 
 psi1_init = [[0] * model.tot_dim]
@@ -881,32 +897,32 @@ plotIQFromShots(
 
 
 #%%
-#model.set_lindbladian(True)
-#exp.set_opt_gates(["Readout[1]"])
-#exp.set_prop_method("pwc")
-#exp.compute_propagators()
+model.set_lindbladian(True)
+exp.set_opt_gates(["Readout[1]"])
+exp.set_prop_method("pwc")
+exp.compute_propagators()
 #%%
-#psi_init = [[0] * model.tot_dim]
-#init_state_index = model.get_state_indeces([(1,0)])[0]
-#psi_init[0][init_state_index] = 1
-#init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
-#if model.lindbladian:
-#    init_state = tf_utils.tf_state_to_dm(init_state)
-#
-#sequence = ["Readout[1]"]
-#plotPopulation(exp, init_state, sequence, usePlotly=False)
+psi_init = [[0] * model.tot_dim]
+init_state_index = model.get_state_indeces([(1,0)])[0]
+psi_init[0][init_state_index] = 1
+init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
+if model.lindbladian:
+    init_state = tf_utils.tf_state_to_dm(init_state)
+
+sequence = ["Readout[1]"]
+plotPopulation(exp, init_state, sequence, usePlotly=False)
 
 #%%
-#plotIQ(
-#        exp=exp, 
-#        sequence=sequence, 
-#        annihilation_operator=model.ann_opers[1], 
-#        drive_freq_q=resonator_frequency-2.75*sideband, 
-#        drive_freq_r=resonator_frequency-2.75*sideband,
-#        t_total=t_readout,
-#        spacing=100, 
-#        usePlotly=False
-#)
+plotIQ(
+        exp=exp, 
+        sequence=sequence, 
+        annihilation_operator=model.ann_opers[1], 
+        drive_freq_q=resonator_frequency-2.75*sideband, 
+        drive_freq_r=resonator_frequency-2.75*sideband,
+        t_total=t_readout,
+        spacing=100, 
+        usePlotly=False
+)
 
 
 

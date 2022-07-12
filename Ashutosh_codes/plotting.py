@@ -1042,7 +1042,7 @@ def plotPopulationFromState(
         
 
 @tf.function
-def calculateIQFromStates(model, psis, freq_q, freq_r, t_final, spacing=100):
+def calculateIQFromStates(model, psis, freq_q, freq_r, ts, spacing=100):
     ar = tf.convert_to_tensor(model.ann_opers[1], dtype=tf.complex128)
     aq = tf.convert_to_tensor(model.ann_opers[0], dtype=tf.complex128)
 
@@ -1050,11 +1050,21 @@ def calculateIQFromStates(model, psis, freq_q, freq_r, t_final, spacing=100):
     Nq = tf.matmul(tf.transpose(aq, conjugate=True), aq)
 
     pi = tf.constant(math.pi, dtype=tf.complex128)
-    U = tf.linalg.expm(1j*2*pi*(freq_r*Nr + freq_q*Nq)*t_final)
+    ts = tf.expand_dims(tf.expand_dims(ts[::spacing], axis=1), axis=2)
+    U = tf.linalg.expm(1j*2*pi*tf.math.multiply((freq_r*Nr + freq_q*Nq), ts))
+
+    #psi_transformed = tf.matmul(
+    #                        tf.transpose(U, conjugate=True),
+    #                        tf.matmul(psis[::spacing], U)
+    #)
     psi_transformed = tf.matmul(
-                            tf.transpose(U, conjugate=True),
-                            tf.matmul(psis[::spacing], U)
+                        tf.transpose(U, conjugate=True, perm=[0, 2, 1]),
+                        tf.matmul(
+                            psis[::spacing],
+                            U
+                        )
     )
+
     expect = tf.linalg.trace(tf.matmul(psi_transformed, ar))
 
     return expect
@@ -1092,7 +1102,7 @@ def plotIQFromStates(
             psis1, 
             freq_q, 
             freq_r, 
-            t_final,
+            ts,
             spacing
     )
 
@@ -1109,7 +1119,7 @@ def plotIQFromStates(
             psis2, 
             freq_q, 
             freq_r, 
-            t_final,
+            ts,
             spacing
     )
 
