@@ -71,7 +71,7 @@ model.set_dressed(False)
 
 #%%
 
-sim_res = 100e9
+sim_res = 500e9
 awg_res = 2e9
 v2hz = 1e9
 
@@ -226,12 +226,12 @@ plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False)
 model.set_lindbladian(True)
 
 psi_init = [[0] * model.tot_dim]
-init_state_index = model.get_state_indeces([(1,)])[0]
+init_state_index = model.get_state_indeces([(0,)])[0]
 psi_init[0][init_state_index] = 1
 init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
-sequence = ["nodrive[0]"]#['x[0]']
+sequence = ['x[0]']#["nodrive[0]"]#['x[0]']
 
 
 plotPopulationFromState(
@@ -250,23 +250,23 @@ plotPopulationFromState(
 # %%
 model.set_lindbladian(False)
 psi_init = [[0] * model.tot_dim]
-init_state_index = model.get_state_indeces([(1,)])[0]
+init_state_index = model.get_state_indeces([(0,)])[0]
 psi_init[0][init_state_index] = 1
 init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
-sequence = ["nodrive[0]"]#['x[0]']
+sequence = ["x[0]"]#["nodrive[0]"]#['x[0]']
 
 plotPopulationFromState(
                     exp, 
                     init_state, 
                     sequence, 
-                    Num_shots=100, 
+                    Num_shots=1, 
                     plot_avg=True, 
                     enable_vec_map=True,
                     batch_size=None,
                     states_to_plot=None,
-                    solver="rk38"
+                    solver="rk4"
                     
 )
 # %%
@@ -285,10 +285,32 @@ result = exp.solve_stochastic_ode(
     Num_shots=Num_shots,
     enable_vec_map=False,
     batch_size=None,
-    solver="rk38"
+    solver="rk4"
 )
 psis = result["states"]
 ts = result["ts"]
+
+#%%
+
+model.set_lindbladian(True)
+psi_init = [[0] * model.tot_dim]
+init_state_index = model.get_state_indeces([(1,)])[0]
+psi_init[0][init_state_index] = 1
+init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
+init_state = tf_utils.tf_state_to_dm(init_state)
+sequence = ['x[0]']
+
+Num_shots = 1
+result = exp.solve_lindblad_ode(
+    init_state=init_state,
+    sequence=sequence,
+    solver="rk4"
+)
+rhos = result["states"]
+ts = result["ts"]
+
+
+
 
 #%%
 #pops = []

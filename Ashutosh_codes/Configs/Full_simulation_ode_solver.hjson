@@ -3301,7 +3301,7 @@
           }
           t1:
           {
-            value: 2.7e-05
+            value: 1e-06
             min_val: 1e-06
             max_val: 9e-05
             unit: s

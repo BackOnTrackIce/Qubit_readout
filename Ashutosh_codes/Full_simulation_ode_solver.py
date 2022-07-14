@@ -55,7 +55,7 @@ qubit = chip.Qubit(
 
 resonator_levels = 5
 resonator_frequency = 6.02e9
-resonator_t1 = 27e-6
+resonator_t1 = 1e-6
 resonator_t2star = 39e-6
 resonator_temp = 50e-3
 
@@ -407,6 +407,7 @@ exp.set_opt_gates(["swap_10_20[0, 1]", "swap_20_01[0, 1]", 'Readout[1]'])
 
 # %%
 exp.write_config("./Configs/Full_simulation_ode_solver.hjson")
+parameter_map.load_values("Full_sim/best_point_open_loop_less_pulse.c3log")
 # %%
 
 model.set_lindbladian(True)
@@ -416,7 +417,7 @@ psi_init[0][init_state_index] = 1
 init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 if model.lindbladian:
     init_state = tf_utils.tf_state_to_dm(init_state)
-sequence = ["swap_10_20[0, 1]", "swap_20_01[0, 1]", 'Readout[1]']
+sequence = ["swap_10_20[0, 1]", "swap_20_01[0, 1]"]#, 'Readout[1]']
 
 states_to_plot = [(0,8), (0,9),
                   (1,8), (1,9),
@@ -434,6 +435,18 @@ plotPopulationFromState(
                     states_to_plot=None,
                     filename="./Plots_ode_solver/States_before_opt"
 )
+#%%
+
+solve_lindblad_ode_tf = tf.function(exp.solve_lindblad_ode)
+result = solve_lindblad_ode_tf(init_state, sequence, solver="rk4")
+rhos = result["states"]
+ts = result["ts"]
+pops = []
+for rho in rhos:
+    pops.append(tf.math.real(tf.linalg.diag_part(rho)))
+pops = tf.transpose(pops)
+
+
 # %%
 model.set_lindbladian(True)
 
