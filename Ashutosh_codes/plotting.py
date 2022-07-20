@@ -1057,11 +1057,12 @@ def calculateIQFromStates(model, psis, freq_q, freq_r, ts, spacing=100):
     #                        tf.transpose(U, conjugate=True),
     #                        tf.matmul(psis[::spacing], U)
     #)
+
     psi_transformed = tf.matmul(
-                        tf.transpose(U, conjugate=True, perm=[0, 2, 1]),
+                        U,
                         tf.matmul(
-                            psis[::spacing],
-                            U
+                            psis[::spacing],  
+                            tf.transpose(U, conjugate=True, perm=[0, 2, 1])
                         )
     )
 
