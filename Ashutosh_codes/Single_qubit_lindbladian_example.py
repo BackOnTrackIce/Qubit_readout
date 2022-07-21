@@ -207,6 +207,7 @@ exp.set_opt_gates(['nodrive[0]', 'x[0]'])
 #compute_propagators_tf = tf.function(exp.compute_propagators)
 #unitaries = compute_propagators_tf()
 exp.set_prop_method("pwc")
+exp.propagate_batch_size = 1000
 unitaries = exp.compute_propagators()
 #print(unitaries)
 
@@ -278,12 +279,12 @@ init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
 #init_state = tf_utils.tf_state_to_dm(init_state)
 sequence = ['x[0]']
 
-Num_shots = 1
+Num_shots = 5
 result = exp.solve_stochastic_ode(
     init_state=init_state,
     sequence=sequence,
     Num_shots=Num_shots,
-    enable_vec_map=False,
+    enable_vec_map=True,
     batch_size=None,
     solver="rk4"
 )
@@ -308,7 +309,9 @@ result = exp.solve_lindblad_ode(
 )
 rhos = result["states"]
 ts = result["ts"]
-
+pops = []
+for rho in rhos:
+    pops.append(tf.math.real(tf.linalg.diag_part(rho)))
 
 
 
@@ -384,3 +387,34 @@ sig_inter_fun = interpolate.interp1d(ts, signals[0], fill_value="extrapolate")
 
 # %%
 
+opt_gates = ["x[0]"]
+exp.set_opt_gates(opt_gates)
+
+gateset_opt_map=[
+    [( "x[0]", "dQ", "swap_pulse", "amp")],
+    [( "x[0]", "dQ", "swap_pulse", "t_up")],
+    [( "x[0]", "dQ", "swap_pulse", "t_down")],
+    [( "x[0]", "dQ", "swap_pulse", "risefall")],
+    [( "x[0]", "dQ", "carrier", "framechange")],
+]
+parameter_map.set_opt_map(gateset_opt_map)
+
+parameter_map.print_parameters()
+# %%
+opt = OptimalControl(
+    dir_path="./output/",
+    fid_func=fidelities.unitary_infid_set,
+    fid_subspace=["Q"],
+    pmap=parameter_map,
+    algorithm=algorithms.lbfgs,
+    options={
+        "maxfun": 25
+    },
+    run_name="x"
+)
+# %%
+exp.set_opt_gates(opt_gates)
+opt.set_exp(exp)
+opt.optimize_controls()
+
+# %%

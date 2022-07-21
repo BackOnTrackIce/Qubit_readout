@@ -1161,11 +1161,21 @@ def plotIQFromStates(
 
 
 @tf.function
-def calculateIQFromShots(model, psis, Num_shots, freq_q, freq_r, t_final):
+def calculateIQFromShots(
+        model, 
+        psis, 
+        Num_shots, 
+        freq_q, 
+        freq_r,
+        ts, 
+        t_start, 
+        t_end, 
+        num_t
+):
     IQ = tf.TensorArray(
         tf.complex128,
         size=Num_shots,
-        dynamic_size=False, 
+        dynamic_size=False,
         infer_shape=False
     )
 
@@ -1176,11 +1186,11 @@ def calculateIQFromShots(model, psis, Num_shots, freq_q, freq_r, t_final):
     Nq = tf.matmul(tf.transpose(aq, conjugate=True), aq)
 
     pi = tf.constant(math.pi, dtype=tf.complex128)
-    U = tf.linalg.expm(1j*2*pi*(freq_r*Nr + freq_q*Nq)*t_final)
-    U = tf.expand_dims(U, axis=0)
-    ar = tf.expand_dims(ar, axis=0)
+    ts = tf.expand_dims(tf.expand_dims(ts[t_start:t_end:num_t], axis=1), axis=2)
+    U = tf.linalg.expm(1j*2*pi*tf.math.multiply((freq_r*Nr + freq_q*Nq), ts))
+
     for i in tf.range(Num_shots):
-        psi_transformed = tf.matmul(U, psis[i][-1])#[::100])
+        psi_transformed = tf.matmul(U, psis[i][t_start:t_end:num_t])
         expect =tf.matmul(
                     tf.transpose(psi_transformed, conjugate=True, perm=[0,2,1]),
                     tf.matmul(ar, psi_transformed)
@@ -1199,7 +1209,9 @@ def plotIQFromShots(
     sequence: List[str],
     freq_q: tf.Tensor,
     freq_r: tf.Tensor,
-    t_final: tf.Tensor,
+    t_start=None, 
+    t_end=None, 
+    num_t=None,
     Num_shots = 1,
     enable_vec_map=False,
     batch_size=None,
@@ -1219,13 +1231,23 @@ def plotIQFromShots(
     psis1 = result1["states"]
     ts = result1["ts"]
 
+    if num_t == None:
+        t_start = len(ts)-1
+        t_end = len(ts)
+        num_t = 1
+    
+    
+
     IQ1 = calculateIQFromShots(
             model, 
             psis1, 
             Num_shots, 
             freq_q, 
-            freq_r, 
-            t_final
+            freq_r,
+            ts[0], 
+            t_start, 
+            t_end, 
+            num_t
     )
 
 
@@ -1244,8 +1266,11 @@ def plotIQFromShots(
             psis2, 
             Num_shots, 
             freq_q, 
-            freq_r, 
-            t_final
+            freq_r,
+            ts[0], 
+            t_start, 
+            t_end, 
+            num_t
     )
 
     

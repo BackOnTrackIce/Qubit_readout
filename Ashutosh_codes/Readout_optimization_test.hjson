@@ -538,7 +538,7 @@
         }
       }
       fixed_t_end: true
-      gate_length: 2e-08
+      gate_length: 5e-08
       drive_channels:
       {
         dQ:
@@ -552,7 +552,7 @@
             {
               amp:
               {
-                value: 0.3141592653589792
+                value: 0.06283185307179584
                 min_val: 0.0
                 max_val: 10.0
                 unit: V
@@ -576,8 +576,8 @@
               }
               xy_angle:
               {
-                value: -4.440892098500626e-16
-                min_val: -1.5707963267948966
+                value: -3.141592653589793
+                min_val: -3.141592653589793
                 max_val: 7.853981633974483
                 unit: rad
                 symbol: \alpha
@@ -592,33 +592,33 @@
               }
               t_final:
               {
-                value: 2e-08
-                min_val: 2e-09
-                max_val: 3.0000000000000004e-08
+                value: 5e-08
+                min_val: 5e-09
+                max_val: 7.5e-08
                 unit: s
                 symbol: \alpha
               }
               t_up:
               {
-                value: 1.9999999999999997e-09
+                value: 1.999999999999999e-09
                 min_val: 0.0
-                max_val: 2e-08
+                max_val: 5e-08
                 unit: s
                 symbol: \alpha
               }
               t_down:
               {
-                value: 1.8e-08
+                value: 4.8e-08
                 min_val: 0.0
-                max_val: 2e-08
+                max_val: 5e-08
                 unit: s
                 symbol: \alpha
               }
               risefall:
               {
-                value: 1.0000000000000005e-09
+                value: 1e-09
                 min_val: 1e-10
-                max_val: 1e-08
+                max_val: 2.5e-08
                 unit: s
                 symbol: \alpha
               }
@@ -660,7 +660,7 @@
             {
               amp:
               {
-                value: 0.3141592653589792
+                value: 0.06283185307179584
                 min_val: 0.0
                 max_val: 10.0
                 unit: V
@@ -700,33 +700,33 @@
               }
               t_final:
               {
-                value: 2e-08
-                min_val: 2e-09
-                max_val: 3.0000000000000004e-08
+                value: 5e-08
+                min_val: 5e-09
+                max_val: 7.5e-08
                 unit: s
                 symbol: \alpha
               }
               t_up:
               {
-                value: 1.9999999999999997e-09
+                value: 1.999999999999999e-09
                 min_val: 0.0
-                max_val: 2e-08
+                max_val: 5e-08
                 unit: s
                 symbol: \alpha
               }
               t_down:
               {
-                value: 1.8e-08
+                value: 4.8e-08
                 min_val: 0.0
-                max_val: 2e-08
+                max_val: 5e-08
                 unit: s
                 symbol: \alpha
               }
               risefall:
               {
-                value: 1.0000000000000005e-09
+                value: 1e-09
                 min_val: 1e-10
-                max_val: 1e-08
+                max_val: 2.5e-08
                 unit: s
                 symbol: \alpha
               }
@@ -791,7 +791,7 @@
         }
       }
       fixed_t_end: true
-      gate_length: 2e-08
+      gate_length: 5e-08
       drive_channels:
       {
         dQ:
@@ -845,9 +845,9 @@
               }
               t_final:
               {
-                value: 2e-08
-                min_val: 1e-08
-                max_val: 3.0000000000000004e-08
+                value: 5e-08
+                min_val: 2.5e-08
+                max_val: 7.5e-08
                 unit: s
                 symbol: \alpha
               }
@@ -929,9 +929,9 @@
               }
               t_final:
               {
-                value: 2e-08
-                min_val: 1e-08
-                max_val: 3.0000000000000004e-08
+                value: 5e-08
+                min_val: 2.5e-08
+                max_val: 7.5e-08
                 unit: s
                 symbol: \alpha
               }
@@ -1032,7 +1032,7 @@
           }
           t1:
           {
-            value: 1.0000000000128517e-07
+            value: 2.999999999766911e-08
             min_val: 1e-10
             max_val: 0.09
             unit: s
@@ -1040,7 +1040,7 @@
           }
           t2star:
           {
-            value: 5.000000000022094e-07
+            value: 0.0005000000000000007
             min_val: 1e-08
             max_val: 0.09
             unit: s
@@ -1055,7 +1055,7 @@
             symbol: \alpha
           }
         }
-        hilbert_dim: 10
+        hilbert_dim: 4
       }
     }
     Couplings:
@@ -1116,7 +1116,7 @@
         inputs: 0
         outputs: 1
         params: {}
-        resolution: 500000000000.0
+        resolution: 100000000000.0
       }
       AWG:
       {
@@ -1134,7 +1134,7 @@
         inputs: 1
         outputs: 1
         params: {}
-        resolution: 500000000000.0
+        resolution: 100000000000.0
       }
       Response:
       {
@@ -1153,7 +1153,7 @@
             symbol: \alpha
           }
         }
-        resolution: 500000000000.0
+        resolution: 100000000000.0
       }
       Mixer:
       {
@@ -1231,5 +1231,5 @@
     overwrite_propagators: true
     stop_partial_propagator_gradient: true
   }
-  sim_res: 500000000000.0
+  sim_res: 100000000000.0
 }

@@ -55,10 +55,10 @@ qubit = chip.Qubit(
     temp=Qty(value=qubit_temp,min_val=0.0,max_val=0.12,unit='K')
 )
 
-resonator_levels = 10
+resonator_levels = 4
 resonator_frequency = 6.02e9
-resonator_t1 = 100e-9
-resonator_t2star = 500e-9
+resonator_t1 = 30e-9
+resonator_t2star = 500e-6
 resonator_temp = 10e-6
 
 parameters_resonator = {
@@ -116,7 +116,7 @@ model.set_dressed(False)
 #%%
 
 # TODO - Check if 10e9 simulation resolution introduce too many errors?
-sim_res = 500e9#500e9
+sim_res = 100e9#500e9
 awg_res = 2e9
 v2hz = 1e9
 
@@ -338,8 +338,8 @@ carriers = createCarriers([
                             resonator_frequency+sideband - chi_1/2], 
                             sideband)
 
-t_readout = 20e-9
-t_total = 20e-9
+t_readout = 50e-9
+t_total = 50e-9
 
 
 readout_params = {
@@ -378,10 +378,10 @@ nodrive_pulse = pulse.Envelope(
 )
 
 qubit_pulse = copy.deepcopy(readout_pulse)
-qubit_pulse.params["amp"] = Qty(value=2*np.pi*0.05,min_val=0.0,max_val=10.0,unit="V")
-qubit_pulse.params["xy_angle"] = Qty(value=0,min_val=-0.5 * np.pi,max_val=2.5 * np.pi,unit="rad")
+qubit_pulse.params["amp"] = Qty(value=2*np.pi*0.01,min_val=0.0,max_val=10.0,unit="V")
+qubit_pulse.params["xy_angle"] = Qty(value=-np.pi,min_val=-np.pi,max_val=2.5 * np.pi,unit="rad")
 resonator_pulse = copy.deepcopy(readout_pulse)
-resonator_pulse.params["amp"] = Qty(value=2*np.pi*0.05,min_val=0.0,max_val=10.0,unit="V")
+resonator_pulse.params["amp"] = Qty(value=2*np.pi*0.01,min_val=0.0,max_val=10.0,unit="V")
 resonator_pulse.params["xy_angle"] = Qty(value=-np.pi,min_val=-np.pi,max_val=2.5 * np.pi,unit="rad")
 
 Readout_gate = gates.Instruction(
@@ -411,7 +411,7 @@ exp = Exp(pmap=parameter_map, sim_res=sim_res)
 #unitaries = exp.compute_propagators()
 #print(unitaries)
 # %%
-exp.set_opt_gates(["swap_10_20[0, 1]"])#, "swap_20_01[0, 1]"])
+exp.set_opt_gates(["swap_10_20[0, 1]", "Readout[1]"])#, "swap_20_01[0, 1]"])
 
 model.set_lindbladian(False)
 psi_init = [[0] * model.tot_dim]
@@ -605,7 +605,7 @@ plotPopulationFromState(
                     plot_avg=True, 
                     enable_vec_map=True,
                     batch_size=None,
-                    states_to_plot=states_to_plot,
+                    states_to_plot=None,
                     solver="rk4"
 )
 #%%
@@ -733,10 +733,9 @@ if model.lindbladian:
 
 sequence = ["Readout[1]"]
 
-freq_q = resonator_frequency + 9.36*sideband
-freq_r = resonator_frequency + 9.36*sideband
+freq_q = resonator_frequency +sideband - chi_1/2 - 45e6 #+ 9.36*sideband
+freq_r = resonator_frequency +sideband - chi_1/2 - 45e6 #+ 9.36*sideband
 t_final = t_readout
-
 
 
 plotIQFromStates(
@@ -747,12 +746,44 @@ plotIQFromStates(
     freq_q=freq_q,
     freq_r=freq_r,
     t_final=t_final,
-    spacing=10,
-    connect_points=True,
-    xlim=2.0,
-    ylim=2.0
+    spacing=1000,
+    connect_points=False,
+    xlim=1.0,
+    ylim=1.0
 )
+#%%
 
+"""
+model.set_lindbladian(True)
+exp.set_opt_gates(["Readout[1]"])
+exp.set_prop_method("pwc")
+exp.compute_propagators()
+
+psi_init = [[0] * model.tot_dim]
+init_state_index = model.get_state_indeces([(1,0)])[0]
+psi_init[0][init_state_index] = 1
+init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
+if model.lindbladian:
+    init_state = tf_utils.tf_state_to_dm(init_state)
+
+sequence = ["Readout[1]"]
+plotPopulation(exp, init_state, sequence, usePlotly=False)
+"""
+#%%
+"""
+freq_q = resonator_frequency +sideband - chi_1/2 - 91e6 #+ 420e6 #+ 9.36*sideband
+freq_r = resonator_frequency +sideband - chi_1/2 - 91e6 #+ 420e6 #+ 9.36*sideband
+plotIQ(
+        exp=exp, 
+        sequence=sequence, 
+        annihilation_operator=model.ann_opers[1], 
+        drive_freq_q=freq_q,
+        drive_freq_r=freq_r,
+        t_total=t_readout,
+        spacing=10, 
+        usePlotly=False
+)
+"""
 
 # %%
 """
@@ -858,7 +889,34 @@ def plotIQFromShots(
     plt.show()
 
 """
+#%%
+model.set_lindbladian(False)
+psi_init = [[0] * model.tot_dim]
+init_state_index = model.get_state_indeces([(1,0)])[0]
+psi_init[0][init_state_index] = 1
+init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
+if model.lindbladian:
+    init_state = tf_utils.tf_state_to_dm(init_state)
+sequence = ["Readout[1]"]#["NoDrive[0, 1]"]#["Readout[1]"]#["swap_10_20[0, 1]"]
 
+states_to_plot = [(0,8), (0,9),
+                  (1,8), (1,9),
+                  (2,8), (2,9),
+                  (3,8), (3,9)]
+
+plotPopulationFromState(
+                    exp, 
+                    init_state, 
+                    sequence, 
+                    Num_shots=1, 
+                    plot_avg=True, 
+                    enable_vec_map=True,
+                    batch_size=None,
+                    states_to_plot=None,
+                    solver="rk4"
+)
+
+#%%
 model.set_lindbladian(False)
 
 psi1_init = [[0] * model.tot_dim]
@@ -878,8 +936,8 @@ if model.lindbladian:
 
 sequence = ["Readout[1]"]
 
-freq_q = resonator_frequency - 2.5*sideband
-freq_r = resonator_frequency - 2.5*sideband
+freq_q = resonator_frequency +sideband - chi_1/2 - 91e6
+freq_r = resonator_frequency +sideband - chi_1/2 - 91e6
 t_final = t_readout
 
 plotIQFromShots(
@@ -887,12 +945,16 @@ plotIQFromShots(
     init_state1=init_state1,
     init_state2=init_state2,
     sequence=sequence,
-    freq_q=0,#freq_q,
-    freq_r=0,#freq_r,
-    t_final=t_final,
-    Num_shots=100,
+    freq_q=freq_q,
+    freq_r=freq_r,
+    t_start=0,
+    t_end=5000,
+    num_t=100,
+    Num_shots=1,
     enable_vec_map=True,
-    batch_size=25
+    batch_size=None,
+    xlim=1.0,
+    ylim=1.0
 )
 
 
