@@ -40,8 +40,8 @@ from distinctipy import distinctipy
 qubit_levels = 4
 qubit_frequency = 7.86e9
 qubit_anharm = -264e6
-qubit_t1 = 27e-6
-qubit_t2star = 39e-6
+qubit_t1 = 27e-3
+qubit_t2star = 39e-3
 qubit_temp = 10e-6
 
 qubit = chip.Qubit(
@@ -57,8 +57,8 @@ qubit = chip.Qubit(
 
 resonator_levels = 4
 resonator_frequency = 6.02e9
-resonator_t1 = 30e-9
-resonator_t2star = 500e-6
+resonator_t1 = 30e-3
+resonator_t2star = 50e-3
 resonator_temp = 10e-6
 
 parameters_resonator = {
@@ -959,7 +959,7 @@ plotIQFromShots(
 
 
 #%%
-model.set_lindbladian(True)
+model.set_lindbladian(False)
 exp.set_opt_gates(["Readout[1]"])
 exp.set_prop_method("pwc")
 exp.compute_propagators()
@@ -1259,4 +1259,67 @@ plotPopulationFromState(
 # %%
 
 
+model.set_lindbladian(False)
+psi_init = [[0] * model.tot_dim]
+init_state_index = model.get_state_indeces([(1,0)])[0]
+psi_init[0][init_state_index] = 1
+init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
+if model.lindbladian:
+    init_state = tf_utils.tf_state_to_dm(init_state)
+sequence = ["Readout[1]"]#["NoDrive[0, 1]"]#["Readout[1]"]#["swap_10_20[0, 1]"]
 
+result = exp.schrodinger_evolution_rk4(
+          init_state=init_state,
+          sequence=sequence  
+)
+
+psis = result["states"]
+ts = result["ts"]
+
+pops = tf.abs(psis)**2
+pops = tf.reshape(pops, pops.shape[:-1])
+
+# %%
+
+plt.figure(dpi=100)
+plt.plot(ts, pops)
+plt.legend(
+    model.state_labels, 
+    bbox_to_anchor=(1.05, 1.0)
+)
+plt.show()
+
+# %%
+
+model.set_lindbladian(False)
+psi_init = [[0] * model.tot_dim]
+init_state_index = model.get_state_indeces([(1,0)])[0]
+psi_init[0][init_state_index] = 1
+init_state = tf.transpose(tf.constant(psi_init, tf.complex128))
+if model.lindbladian:
+    init_state = tf_utils.tf_state_to_dm(init_state)
+sequence = ["Readout[1]"]#["NoDrive[0, 1]"]#["Readout[1]"]#["swap_10_20[0, 1]"]
+
+result = exp.von_Neumann_rk4(
+          init_state=init_state,
+          sequence=sequence  
+)
+
+psis = result["states"]
+ts = result["ts"]
+
+# %%
+
+pops = []
+for rho in psis:
+    pops.append(tf.math.real(tf.linalg.diag_part(rho)))
+
+plt.figure(dpi=100)
+plt.plot(ts, pops)
+plt.legend(
+    model.state_labels, 
+    bbox_to_anchor=(1.05, 1.0)
+)
+plt.show()
+
+# %%

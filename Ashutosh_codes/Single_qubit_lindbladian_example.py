@@ -223,7 +223,7 @@ sequence = ['x[0]']
 plotPopulation(exp=exp, psi_init=init_state, sequence=sequence, usePlotly=False)
 
 #%%
-
+"""
 model.set_lindbladian(True)
 
 psi_init = [[0] * model.tot_dim]
@@ -246,9 +246,10 @@ plotPopulationFromState(
                     states_to_plot=None,
                     solver="rk38"
 )
-
+"""
 
 # %%
+"""
 model.set_lindbladian(False)
 psi_init = [[0] * model.tot_dim]
 init_state_index = model.get_state_indeces([(0,)])[0]
@@ -270,7 +271,9 @@ plotPopulationFromState(
                     solver="rk4"
                     
 )
+"""
 # %%
+
 model.set_lindbladian(False)
 psi_init = [[0] * model.tot_dim]
 init_state_index = model.get_state_indeces([(1,)])[0]

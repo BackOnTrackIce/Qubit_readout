@@ -992,7 +992,7 @@
           }
           t1:
           {
-            value: 2.6999999999999857e-05
+            value: 0.027
             min_val: 1e-10
             max_val: 0.09
             unit: s
@@ -1000,7 +1000,7 @@
           }
           t2star:
           {
-            value: 3.900000000000106e-05
+            value: 0.039
             min_val: 1e-05
             max_val: 0.09
             unit: s
@@ -1032,7 +1032,7 @@
           }
           t1:
           {
-            value: 2.999999999766911e-08
+            value: 0.03
             min_val: 1e-10
             max_val: 0.09
             unit: s
@@ -1040,7 +1040,7 @@
           }
           t2star:
           {
-            value: 0.0005000000000000007
+            value: 0.05
             min_val: 1e-08
             max_val: 0.09
             unit: s
