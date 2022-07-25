@@ -1195,7 +1195,7 @@ def calculateIQFromShots(
                     tf.transpose(psi_transformed, conjugate=True, perm=[0,2,1]),
                     tf.matmul(ar, psi_transformed)
         )[:,0,0]
-        print(expect)
+        tf.print(expect)
 
         IQ = IQ.write(i, expect)
 

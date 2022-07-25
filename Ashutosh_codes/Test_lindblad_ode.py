@@ -40,8 +40,8 @@ from distinctipy import distinctipy
 qubit_levels = 4
 qubit_frequency = 7.86e9
 qubit_anharm = -264e6
-qubit_t1 = 27e-3
-qubit_t2star = 39e-3
+qubit_t1 = 27e-6
+qubit_t2star = 39e-6
 qubit_temp = 10e-6
 
 qubit = chip.Qubit(
@@ -57,8 +57,8 @@ qubit = chip.Qubit(
 
 resonator_levels = 4
 resonator_frequency = 6.02e9
-resonator_t1 = 30e-3
-resonator_t2star = 50e-3
+resonator_t1 = 30e-9
+resonator_t2star = 500e-9
 resonator_temp = 10e-6
 
 parameters_resonator = {
@@ -116,7 +116,7 @@ model.set_dressed(False)
 #%%
 
 # TODO - Check if 10e9 simulation resolution introduce too many errors?
-sim_res = 100e9#500e9
+sim_res = 500e9#500e9
 awg_res = 2e9
 v2hz = 1e9
 
@@ -338,8 +338,8 @@ carriers = createCarriers([
                             resonator_frequency+sideband - chi_1/2], 
                             sideband)
 
-t_readout = 50e-9
-t_total = 50e-9
+t_readout = 20e-9
+t_total = 20e-9
 
 
 readout_params = {
@@ -378,10 +378,10 @@ nodrive_pulse = pulse.Envelope(
 )
 
 qubit_pulse = copy.deepcopy(readout_pulse)
-qubit_pulse.params["amp"] = Qty(value=2*np.pi*0.01,min_val=0.0,max_val=10.0,unit="V")
+qubit_pulse.params["amp"] = Qty(value=2*np.pi*0.02,min_val=0.0,max_val=10.0,unit="V")
 qubit_pulse.params["xy_angle"] = Qty(value=-np.pi,min_val=-np.pi,max_val=2.5 * np.pi,unit="rad")
 resonator_pulse = copy.deepcopy(readout_pulse)
-resonator_pulse.params["amp"] = Qty(value=2*np.pi*0.01,min_val=0.0,max_val=10.0,unit="V")
+resonator_pulse.params["amp"] = Qty(value=2*np.pi*0.02,min_val=0.0,max_val=10.0,unit="V")
 resonator_pulse.params["xy_angle"] = Qty(value=-np.pi,min_val=-np.pi,max_val=2.5 * np.pi,unit="rad")
 
 Readout_gate = gates.Instruction(
@@ -582,7 +582,7 @@ def plotPopulationFromState(
 parameter_map.load_values("readout_optimization_best_point_open_loop.c3log")
 
 """
-
+#%%
 model.set_lindbladian(True)
 psi_init = [[0] * model.tot_dim]
 init_state_index = model.get_state_indeces([(1,0)])[0]
@@ -606,7 +606,7 @@ plotPopulationFromState(
                     enable_vec_map=True,
                     batch_size=None,
                     states_to_plot=None,
-                    solver="rk4"
+                    solver="rk5"
 )
 #%%
 """
@@ -713,7 +713,7 @@ def plotIQFromStates(
     plt.show()
 
 """
-
+#%%
 model.set_lindbladian(True)
 
 psi1_init = [[0] * model.tot_dim]
@@ -748,8 +748,8 @@ plotIQFromStates(
     t_final=t_final,
     spacing=1000,
     connect_points=False,
-    xlim=1.0,
-    ylim=1.0
+    xlim=1.5,
+    ylim=1.5
 )
 #%%
 
@@ -905,15 +905,15 @@ states_to_plot = [(0,8), (0,9),
                   (3,8), (3,9)]
 
 plotPopulationFromState(
-                    exp, 
-                    init_state, 
-                    sequence, 
-                    Num_shots=1, 
-                    plot_avg=True, 
+                    exp,
+                    init_state,
+                    sequence,
+                    Num_shots=100,
+                    plot_avg=True,
                     enable_vec_map=True,
                     batch_size=None,
                     states_to_plot=None,
-                    solver="rk4"
+                    solver="rk5"
 )
 
 #%%
@@ -949,8 +949,8 @@ plotIQFromShots(
     freq_r=freq_r,
     t_start=0,
     t_end=5000,
-    num_t=100,
-    Num_shots=1,
+    num_t=None,
+    Num_shots=10,
     enable_vec_map=True,
     batch_size=None,
     xlim=1.0,
@@ -1106,7 +1106,7 @@ plotPopulationFromState(exp, init_state, sequence, Num_shots=1)
 parameter_map.print_parameters()
 
 # %%
-model.set_lindbladian(True)
+model.set_lindbladian(False)
 exp.set_opt_gates(["Readout[1]"])
 exp.set_prop_method("pwc")
 exp.compute_propagators()
@@ -1285,6 +1285,7 @@ plt.figure(dpi=100)
 plt.plot(ts, pops)
 plt.legend(
     model.state_labels, 
+    ncol=4,
     bbox_to_anchor=(1.05, 1.0)
 )
 plt.show()
@@ -1322,4 +1323,16 @@ plt.legend(
 )
 plt.show()
 
+# %%
+
+
+## Trying interpolation for dopri5
+sig = tf.constant([0, 0.5, 1.0, 1.0, 1.0, 0.5, 0], dtype=tf.float64)
+ts = tf.constant([0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0], dtype=tf.float64)
+ts_new = tf.constant(np.array([[i + 0, i + 1/5, i + 3/10, i + 4/5, i+ 8/9, i + 1] for i in ts]).flatten(), dtype=tf.float64)
+sig_new = tfp.math.interp_regular_1d_grid(ts_new, ts[0], ts[-1], sig, fill_value="extrapolate")
+# %%
+plt.plot(ts, sig, marker="o")
+#%%
+plt.plot(ts_new, sig_new, marker="o")
 # %%
